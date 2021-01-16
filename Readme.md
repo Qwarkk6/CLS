@@ -33,4 +33,4 @@ License text can be found <a href="https://github.com/Qwarkk6/CLS/blob/main/LICE
 <b>License Exceptions</b>
 
 lib_navball.ks | lib_lazcalc.ks | lib_num_to_formatted_str.ks - <a href="https://github.com/KSP-KOS/KSLib">KSLib</a> - <a href="https://opensource.org/licenses/MIT">MIT</a><br>
-See entries at the bottom of the <a href="https://github.com/Qwarkk6/CLS/blob/main/LICENSE.txt">license</a> for more information.
+See <a href="https://github.com/Qwarkk6/CLS/blob/main/LICENSE_EXCEPTIONS.txt">license_exceptions</a> for more information.
