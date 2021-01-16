@@ -55,8 +55,8 @@ Parameter SecondsUntilLaunch is 23.			//Script initialises for 3 seconds, then p
 // Fuel configuration
 // Change these to configure non-stock fuels. Do not remove CryoFuelName (Even if you are using stock fuels).
 // If you do change them, make sure to change the corresponding fuel mass (you may have to dig in resource config files)
-Set OxidizerFuelName to "LOx".
-Set LiquidFuelName to "RP-1".
+Set OxidizerFuelName to "Oxidizer".
+Set LiquidFuelName to "LiquidFuel".
 Set CryoFuelName to "LqdHydrogen".
 Set SolidFuelName to "SolidFuel".
 Set OxidizerFuelMass to 0.005.
