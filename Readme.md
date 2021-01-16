@@ -5,11 +5,11 @@ An auto-launch script that handles everything from pre-launch through ascent to 
 
 <b>Dependencies</b>
 
-The only dependency of CLS is the <a href="https://forum.kerbalspaceprogram.com/index.php?/topic/165628-181-kos-v1210-kos-scriptable-autopilot-system/">kOS</a> mod
+The only dependency of CLS is the <a href="https://forum.kerbalspaceprogram.com/index.php?/topic/165628-181-kos-v1210-kos-scriptable-autopilot-system/">kOS</a> mod.
 
 <b>Installation</b>
 
-Copy everything from the zip into your main Kerbal Space Program folder
+Copy everything from the zip into your main Kerbal Space Program folder.
 
 <b>Future Development</b>
 
