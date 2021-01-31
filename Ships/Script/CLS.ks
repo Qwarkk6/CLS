@@ -122,7 +122,7 @@ If targetapoapsis = 0 {
 }
 
 // Calculates launch azimuth
-Set launchazimuth to LaunchAzm(targetapoapsis,targetinclination,"Ascent").
+Set launchazimuth to LaunchAzm(targetinclination,"Ascent").
 
 // List creation
 Set printlist to List(). Set printlisthistory to List(). printlisthistory:add("*").															// Scrolling print function
@@ -454,7 +454,7 @@ Until launchcomplete or InputAbort {
 		} else if tuning = "Fine" and ship:orbit:inclination > ABS(targetinclination)+0.1 and ship:orbit:inclination < ABS(targetinclination)-0.1 {
 			Set tuning to "Ascent".
 		}
-		Set launchazimuth to LaunchAzm(targetapoapsis,targetinclination,tuning).
+		Set launchazimuth to LaunchAzm(targetinclination,tuning).
 		
 		
 		// Ship pitch control
@@ -736,7 +736,7 @@ Until launchcomplete or InputAbort {
 		set throt to 0.
 		Set Ship:control:neutralize to true. 
 		sas on.
-		Toggle abort.
+		runpath("0:/Abort.ks").
 		scrollprint("Launch Aborted").
 		Hudtext("Launch Aborted!",5,2,100,red,false).
 		Set launchcomplete to true.
