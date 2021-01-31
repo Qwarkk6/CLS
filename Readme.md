@@ -3,6 +3,8 @@ CLS (Common Launch Script)
 
 An auto-launch script that handles everything from pre-launch through ascent to a final circular orbit for any desired apoapsis and inclination.
 
+Also includes a bundled Abort script which maintains steering control and terminal readouts during an abort. Script terminates once the vehicle begins to fall.
+
 <b>Dependencies</b>
 
 The only dependency of CLS is the <a href="https://forum.kerbalspaceprogram.com/index.php?/topic/165628-181-kos-v1210-kos-scriptable-autopilot-system/">kOS</a> mod.
