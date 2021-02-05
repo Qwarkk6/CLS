@@ -12,11 +12,12 @@
 														//		0 - will launch a 2 stage rocket into the highest possible circular orbit
 														//		1 - will launch a 3 stage rocket into the highest possible circular orbit
 //       	desired orbit inclination,      			// in degrees (positive number = ascending launch azimuth, negative number = descending launch azimuth)
-//			launch time or seconds until launch)		// Can either be "hh:mm:ss" of the specific launch time (including quotation marks) or number of seconds until launch (no quotation marks necessary). 
+//			launch time or seconds until launch,		// Can either be "hh:mm:ss" of the specific launch time (including quotation marks) or number of seconds until launch (no quotation marks necessary). 
 														// If inputted time is earlier than current time, it will presume a the launch will happen at that time the following day.
+//			Log function)								// CLS can log date to an external csv file. Requires a logs folder in the archive. False by default.
 
-// Example:	run cls(250,28,60).							// Will launch into a 250km circular orbit with an inclination of 28 degrees. Liftoff will occur in 60 seconds time.
-// Example:	run cls(90,58,"02:36:48").					// Will launch into a 90km circular orbit with an inclination of 58 degrees. Liftoff will occur at 02:36:48.
+// Example:	run cls(250,28,60,true).					// Will launch into a 250km circular orbit with an inclination of 28 degrees. Liftoff will occur in 60 seconds time and data logging will occur.
+// Example:	run cls(90,58,"02:36:48").					// Will launch into a 90km circular orbit with an inclination of 58 degrees. Liftoff will occur at 02:36:48, without data logging.
 
 // Required staging / vehicle set-up:
 //   - Initial launch engines must be placed into stage 1.
@@ -49,14 +50,15 @@
 // Default launch parameters (changed with terminal input above)
 // This launches vehicle to a 200,000m circular orbit along the equator
 Parameter targetapoapsis is 200.
-Parameter targetinclination is ship:orbit:inclination. 
+Parameter targetinclination is round(ship:orbit:inclination). 
 Parameter SecondsUntilLaunch is 23.			//Script initialises for 3 seconds, then performs essential pre-launch checks during a 20 seconds countdown. Value must be greater than 20.
+Parameter csvLog is false.
 
 // Fuel configuration
 // Change these to configure non-stock fuels. Do not remove CryoFuelName (Even if you are using stock fuels).
 // If you do change them, make sure to change the corresponding fuel mass (you may have to dig in resource config files)
-Set OxidizerFuelName to "Oxidizer".
 Set LiquidFuelName to "LiquidFuel".
+Set OxidizerFuelName to "Oxidizer".
 Set CryoFuelName to "LqdHydrogen".
 Set SolidFuelName to "SolidFuel".
 Set OxidizerFuelMass to 0.005.
@@ -72,6 +74,12 @@ Set UpperAscentTWR to 0.7.			// When time to apoapsis is above 90 seconds, the e
 // Staging delays
 Set stagedelay to 0.5. 					// Delay after engine shutdown or previous staging before staging will occur. Must be >= 1
 Set throttledelay to 1.5. 				// Delay after stage seperation before engine throttles up
+
+// Date logging
+if csvLog {
+	runpath("0:/cls_lib/log.ks").
+	LogInitialise(targetapoapsis,targetinclination).	//Creates an external csv file with launch data
+}
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -121,8 +129,9 @@ If targetapoapsis = 0 {
 	set targetapoapsis to targetapoapsis*1000.		// Default - converts targetapoapsis from km to m
 }
 
-// Calculates launch azimuth
-Set launchazimuth to LaunchAzm(targetinclination,"Ascent").
+// Calculates initial launch azimuth
+Set data to LAZcalc_init(targetapoapsis,targetinclination).
+Set launchazimuth to LAZcalc(data).
 
 // List creation
 Set printlist to List(). Set printlisthistory to List(). printlisthistory:add("*").															// Scrolling print function
@@ -171,7 +180,6 @@ set broke90 to false.															// Detects when the vehicle's time to apoaps
 set Stagingthrottle to false.													// Used to throttle main engines down when approaching stage seperation
 set StagingSteerHold to false.													// Used with RCS to keep vehicle's orientation during staging
 set steerhold to false.															// SteeringHold function. Boolean. True when stage remains settled for a duration of time during staging.
-Set tuning to "Ascent".															// LaunchAzm function. Detects when target inclination is achieved and locks azimuth to prograde. 
 
 // Bad input checks terminate script
 If InputAbort = false {
@@ -185,7 +193,7 @@ If InputAbort = false {
 		Print "Target Inclination (" + targetinclination + "°) Impossible." at (0,3).
 		Set InputAbort to true.
 	}
-	HUDinit(launchtime,targetapoapsis,targetinclination).						// Initiates the HUD information at the top of the terminal.
+	HUDinit(launchtime,targetapoapsis,targetinclination,csvLog).						// Initiates the HUD information at the top of the terminal.
 }
 
 // Main loop begin
@@ -195,6 +203,11 @@ Until launchcomplete or InputAbort {
 	Eventlog().							// Initiates mission log readouts in the body of the terminal
 	AscentHUD().						// Initiates the HUD information at the bottom of the terminal.
 	If warp > 0 Warpcontrol().			// Activates warp control function anytime warp speed is manually adjusted
+
+	//Log feature - logs data to the csv file created by LogInitialise()
+	if csvLog {
+		log_data(missiontime,LIST(missiontime,mode,StageDV(currentstagenum),twrsrb(),throt,pitch_for(ship),(ship:q*constant:AtmToKPa),ship:altitude,ship:apoapsis,eta:apoapsis,ship:periapsis,currentstagenum,staginginprogress,runmode,numparts),logPath).
+	}
 
 	// Countdown
 	// Countdown function handles the 'empty' countdown seconds. Below are pre-launch checks. They produce terminal readouts written for a sense of realism. 
@@ -337,6 +350,7 @@ Until launchcomplete or InputAbort {
 			} else {
 				Stage.
 				Set numparts to Ship:parts:length.
+				set launchtime to time:seconds.
 				scrollprint("Liftoff").
 				If mode = 1	{
 					set throt to SRBtwrthrottle(LiftoffTWR).
@@ -350,54 +364,26 @@ Until launchcomplete or InputAbort {
 		}
 	}
 
-	// Countdown hold for minor issues
-	// Holds the countdown and gives you the choice to scrub (press N) or continue (press A) the launch.
-	if runmode = -2 {
-		Set ContinueYN to false.
+	// Countdown hold for unplanned issues
+	// Holds the countdown and gives you the choice to continue, recycle or abort the launch
+	if runmode = -2 or runmode = -3 {
 		scrollprint("Hold Hold Hold").
 		scrollprint(scrubreason).
-		scrollprint("Continue?").
-		scrollprint("[A] to Continue Countdown").
-		scrollprint("[N] to Scrub Launch").
 		
-		until ContinueYN = true {
-			If ship:control:pilotyaw = -1 {						// Detects pilot steering input - aka pressing A or N.
-				set ContinueYN to true.
-				set runmode to -1.
-				set launchtime to time:seconds + tminus.
-				Print "Target Launch Time: NET " + T_O_D(launchtime) at (0,1).
-			} else if ship:control:pilotfore = -1 {				// Detects pilot steering input - aka pressing A or N.
-				set ContinueYN to true.
-				scrollprint("Launch Scrubbed").
-				set launchcomplete to true.
-			}
-		}
-	}
-	
-	// Countdown hold and Launch sequence recycle for major issues
-	// Holds the countdown and gives you the choice to scrub (press N) or restart (press A) the launch sequence.
-	If runmode = -3 {
-		printlisthistory:clear.
-		Set ContinueYN to false.
-		scrollprint("Hold Hold Hold").
-		scrollprint(scrubreason).
-		scrollprint("Recycle Launch Sequence?").
-		scrollprint("[A] to Recycle Countdown").
-		scrollprint("[N] to Scrub Launch").
-		
-		until ContinueYN = true {
-			If ship:control:pilotyaw = -1 {					// Detects pilot steering input - aka pressing A or N.
-				set ContinueYN to true.
-				set runmode to -1.
-				Set tminus to 20.
-				Set cdownreadout to 0.
-				set launchtime to time:seconds + 23.
-				Print "Target Launch Time: NET " + T_O_D(launchtime) at (0,1).
-			} else if ship:control:pilotfore = -1 {			// Detects pilot steering input - aka pressing A or N.
-				set ContinueYN to true.
-				scrollprint("Launch Scrubbed").
-				set launchcomplete to true.
-			}
+		if scrubGUI(scrubreason,runmode) = 1 {
+			set runmode to -1.
+			set launchtime to time:seconds + tminus.
+			Print "Target Launch Time: NET " + T_O_D(launchtime) at (0,1).
+		} else if scrubGUI(scrubreason,runmode) = 2 {
+			printlisthistory:clear.
+			set runmode to -1.
+			Set tminus to 20.
+			Set cdownreadout to 0.
+			set launchtime to time:seconds + 23.
+			Print "Target Launch Time: NET " + T_O_D(launchtime) at (0,1).
+		} else if scrubGUI(scrubreason,runmode) = 3 {
+			scrollprint("Launch Scrubbed").
+			set launchcomplete to true.	
 		}
 	}
 	
@@ -445,17 +431,14 @@ Until launchcomplete or InputAbort {
 	If runmode = 2 {	
 
 		Set AscentAlt to ship:altitude-turnstart.
-		
-		// Calculates launch azimuth
-		If ship:orbit:inclination > ABS(targetinclination)-0.05 and ship:orbit:inclination < ABS(targetinclination)+0.05 {
-			if staginginprogress = false and ImpendingStaging = false {
-				Set tuning to "Fine".
-			}
-		} else if tuning = "Fine" and ship:orbit:inclination > ABS(targetinclination)+0.1 and ship:orbit:inclination < ABS(targetinclination)-0.1 {
-			Set tuning to "Ascent".
+		if abs(targetinclination) > 0.1 and currentstagenum > 1 and ship:orbit:inclination > (abs(targetinclination) * 0.99) {
+			Set launchazimuth to IncCorr(targetinclination).
+		} else {
+			Set launchazimuth to LAZcalc(data).
 		}
-		Set launchazimuth to LaunchAzm(targetinclination,tuning).
 		
+		//https://github.com/TheGreatFez/Ascent_Evolution/tree/V3.0
+		//https://github.com/TheGreatFez/Ascent_Evolution/blob/V3.0/launch.ks
 		
 		// Ship pitch control
 		// Pitches gradually to reach 45 degrees at the altitude set by halfPitchAlt. Then pitches to 5 degrees until time to apoapsis is above 90. Then pitches to 0 degrees.
@@ -464,9 +447,9 @@ Until launchcomplete or InputAbort {
 		} else if AscentAlt < turnend or currentstagenum = 1 {
 			Set trajectorypitch to max(45-((AscentAlt-halfPitchAlt)/(turnend-halfPitchAlt)*40),pitchlimit(1,targetapoapsis,eta:apoapsis)).
 		} else {
-			if staginginprogress or ImpendingStaging {
-				set trajectorypitch to 0.
-			} else {
+			//if staginginprogress or ImpendingStaging {
+				//set trajectorypitch to 0.
+			//} else {
 				set dpitch:setpoint to eta:apoapsis.
 				set trajectorypitch to max(0,min(trajectorypitch+dpitch:update(missiontime,eta:apoapsis),pitchlimit(2,targetapoapsis,eta:apoapsis))).
 			}
@@ -575,6 +558,10 @@ Until launchcomplete or InputAbort {
 		// Ascent TWR control For second stage
 		// Checks whether it has been 5 seconds since staging and time to apoapsis is above 90 seconds before gradually throttling to TWR set by UpperAscentTWR
 		If currentstagenum > 1 and staginginprogress = false {
+			If twr() > maxAscentTWR {
+				set throt to SRBtwrthrottle(maxAscentTWR).
+				scrollprint("Maintaining TWR").
+			}	
 			If Eta:apoapsis > 90 and broke90 = false and (Time:seconds - stagefinishtime) >= 5 {
 				Set broke90 to true.
 				Set throttletime to Time:seconds.
@@ -612,7 +599,7 @@ Until launchcomplete or InputAbort {
 			// If time to apoapsis drops below 45 seconds after engines have throttled down, this will throttle them back up
 			If broke90 = true and Eta:apoapsis < 45 {
 				Set broke90 to false.
-				set throt to 1.
+				set throt to TWRthrottle(maxAscentTWR).
 			}
 		}
 		
@@ -624,7 +611,7 @@ Until launchcomplete or InputAbort {
 		}
 		
 		// If the vehicle reaches its target apoapsis without staging, this forces it to stage so that upper stages handle circularisation
-		if ship:apoapsis >= (targetapoapsis*0.998) {
+		if ship:apoapsis >= (targetapoapsis*0.9998) {
 			if currentstagenum < MaxStages {
 				Set EngstagingOverride to true.
 			}
@@ -728,6 +715,7 @@ Until launchcomplete or InputAbort {
 	// Triggers program end
 	If runmode = 6 {
 		wait 10.
+		remove cnode.
 		Set launchcomplete to true.
 	}
 
@@ -736,7 +724,7 @@ Until launchcomplete or InputAbort {
 		set throt to 0.
 		Set Ship:control:neutralize to true. 
 		sas on.
-		runpath("0:/Abort.ks").
+		//runpath("0:/Abort.ks").
 		scrollprint("Launch Aborted").
 		Hudtext("Launch Aborted!",5,2,100,red,false).
 		Set launchcomplete to true.
@@ -874,16 +862,17 @@ Until launchcomplete or InputAbort {
 						}
 						else If Ship:availablethrust >= 0.01 and ((Time:seconds-stagetime)-throttledelay) < 3 {
 							scrollprint("Stage "+currentstagenum+" Ignition").
-							set throt to (1*((Time:seconds-stagetime)-throttledelay)/3).
+							set throt to (TWRthrottle(maxAscentTWR)*((Time:seconds-stagetime)-throttledelay)/3).
 							if ((Time:seconds-stagetime)-throttledelay) > 0.75 {
 								Set staginginprogress to false.
 								Set EngstagingOverride to false.
 								Set stagefinishtime to Time:seconds.
 							}
 						}
+						// Caps throttle to maxAscentTWR, is reduced to 0.7 in upper atmopshere
 						else If Ship:availablethrust >= 0.01 and ((Time:seconds-stagetime)-throttledelay) >= 3 {
 							Set stagetime to Time:seconds+100000.
-							set throt to 1.
+							set throt to TWRthrottle(maxAscentTWR).
 						}
 					} else {
 						Set staginginprogress to false.
@@ -904,6 +893,8 @@ Until launchcomplete or InputAbort {
 		If runmode < 3 and Vang(Ship:facing:vector, steering:vector) > 25 and missiontime > 5 {
 			Set runmode to -666.
 			scrollprint("Loss of Ship Control").
+			scrollprint("    " + ship:facing).
+			scrollprint("    " + steering).
 		}
 		// Abort if number of parts less than expected (i.e. ship breaking up)
 		If Ship:parts:length <= (numparts-1) and Stage:ready {
