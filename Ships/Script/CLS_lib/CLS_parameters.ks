@@ -148,7 +148,7 @@ Function launchParam {
 				}
 			} else {
 				lineh1:hide().
-				global tApo is 84000000.
+				global tApo is 500000.
 			}
 			
 			//Inclination
@@ -214,9 +214,14 @@ Function launchParam {
 		
 		//Error Checking
 		//Apoapsis 
-		if tApoButton1:pressed and tApo < 70000 {
-			set inputError to true.
-			set Error2:text to "Target apoapsis is below the atmosphere (70km)".
+		if tApoButton1:pressed {
+			if tApo < 70000 {
+				set inputError to true.
+				set Error2:text to "Target apoapsis is below the atmosphere (70km)".
+			} else if tApo > 500000 {
+				set inputError to true.
+				set Error2:text to "Target apoapsis is above the maximum rating for CLS".
+			}
 		} 
 		//Inclination
 		if ABS(tInc) < Floor(ABS(latitude)) or ABS(tInc) > (180 - Ceiling(ABS(latitude))) {
