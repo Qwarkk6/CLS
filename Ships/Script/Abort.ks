@@ -1,16 +1,22 @@
-// Abort.ks - An abort procedure script which maintains steering control and terminal readouts during an abort. Script terminates once the vehicle begins to fall.
-// Copyright © 2021 Qwarkk6
-// Lic. CC-BY-SA-4.0 
-
 //Monitors engines for flameout
 Function EngineFlameout {
 	list engines in engList.
-	For e in engList {
-		If e:ignition and not e:flameout {
-			return false.
+	if engList:length = 1 {
+		For p in engList {
+			if p:getmodule("ModuleEnginesFX"):getfield("status") = "Flame-Out!" {
+				return true.
+			} else {
+				return false.
+			}
 		}
-		If e:ignition and e:flameout {
-			return true.
+	} else {
+		For e in engList {
+			If e:ignition and not e:flameout {
+				return false.
+			}
+			If e:ignition and e:flameout {
+				return true.
+			}
 		}
 	}
 }
@@ -21,7 +27,7 @@ function AbortResMonitor {
 		If res:Name = "ElectricCharge" {
 			set EC to (Res:Amount/Res:Capacity)*100.
 		}
-		if res:Name = "MonoPropellant" {
+		if res:Name = "Aerozine50" {
 			set rcsFuel to (Res:Amount/Res:Capacity)*100.
 		} 
 	}		
@@ -43,20 +49,28 @@ toggle abort.
 set rcsFuel to 0.
 set EC to 0.
 RCS on. SAS off.
-set steerto to heading(compass_for_vect(ship,ship:facing:forevector),pitch_for_vect(ship,ship:facing:forevector)).
-lock steering to steerto.
 set entrytime to time:seconds.
 
+//Steering setup
+set Yaw to ship:facing:yaw.
+set Roll to ship:facing:roll.
+set Pitch to ship:facing:pitch.
+set steerto to heading(Pitch,Yaw,Roll).
+lock steering to steerto.
+
 until EngineFlameout() = true {
-	set steerto to heading(compass_for_vect(ship,ship:facing:forevector),pitch_for_vect(ship,ship:facing:forevector)).
+	set tRate to (time:seconds - entrytime)*2.5.
+	set steerto to R(Pitch+tRate,Yaw+tRate,Roll).
 	set shipStat to "Abort Burn".
 	AbortResMonitor(). AbortHUD().
 	wait 0.001.
 }
 
 until ship:verticalspeed < 0 or pitch_for_vect(ship,ship:srfprograde:forevector) < 10 {
-	set steerto to ship:srfprograde.
+	set steerto to R(Pitch+tRate,Yaw+tRate,Roll).
 	set shipStat to "Coasting".
 	AbortResMonitor(). AbortHUD().
 	wait 0.001.
 }
+
+runpath("0:/ReEntry.ks").
