@@ -153,7 +153,14 @@ Function launchParam {
 			
 			//Inclination
 			if tIncInput:text:length > 0 {
-				global tInc is tIncInput:text:tonumber().
+				if tIncInput:text:startswith("-") {
+					if tIncInput:text:length > 1 {
+						local minus is tIncInput:text:split("-")[1].
+						global tInc is 0 - minus:tonumber().
+					}
+				} else {
+					global tInc is tIncInput:text:tonumber().
+				}
 			}
 			
 			//Launch Window
