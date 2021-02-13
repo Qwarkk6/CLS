@@ -13,4 +13,8 @@ compass_for_vect:	https://www.reddit.com/r/Kos/comments/3fim1n/cant_find_the_dir
 The function IncCorr is a small modification of u/BriarAndRye's Instantaneous Azimuth Function
 Instantaneous Azimuth Function:		https://www.reddit.com/r/Kos/comments/3a5hjq/instantaneous_azimuth_function/
 
+The function PitchProgram_Sqrt is a modified version of TheGreatFez's pitch program.
+PitchProgram_Sqrt:		https://github.com/TheGreatFez/kOS-Scripts
+
+
 ========================================================================
