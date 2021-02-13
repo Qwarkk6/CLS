@@ -148,7 +148,7 @@ Function HUDinit {
 	
 	Print Ship:name + " Launch Sequence Initialised" at (0,0).
 	Print "Target Launch Time: NET " + T_O_D(launchtime) at (0,1).
-	if targetapoapsis = 84000000 {
+	if targetapoapsis = 500000 {
 		Print "Target Parking Orbit: Highest Possible" at (0,2).
 	} else {
 		Print "Target Parking Orbit: " + Ceiling(targetapoapsis,2) + "m" at (0,2).
