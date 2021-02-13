@@ -23,6 +23,7 @@ Major Changes:
 - Rewrote the Abort script steering code. The pod will now perform a slow pitch maneuver away from the rocket to ensure it is clear from any RUDs.
 - Added pre-launch check which determines if there is crew present and holds the launch if there is nothing in the abort action group. This is configurable.
 - Added a contingency if the vehicle loses attitude control and cannot orientate itself for circularisation burn. Engines will throttle up a tiny amount and gimbal to the correct attitude prior to the burn.
+- Limited CLS to a maximum apoapsis of 500km. This fixes an error where direct launches to higher orbits miscalculated the azimuth needed. 
 
 Minor Changes:
 - Fixed an error in CLS_hud which occurred when an abort was triggered. 
