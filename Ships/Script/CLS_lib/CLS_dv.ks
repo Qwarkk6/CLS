@@ -5,19 +5,19 @@
 @lazyglobal off.
 
 // calculates remaining dV of current stage
-Function StageDV {
-	Parameter StageNumber.
-	Local fuelmass is (PartlistFuelCapacity(stagetanks,OxidizerFuelName)*OxidizerFuelMass) + (PartlistFuelCapacity(stagetanks,CryoFuelName)*CryoFuelMass) + (PartlistFuelCapacity(stagetanks,LiquidFuelName)*LiquidFuelMass).
+Function stageDV {
+	Parameter payloadProt.			// Are fairings/LES still present
+	Local fuelmass is (plistFuelRem(stagetanks,OxidizerFuelName)*OxidizerFuelMass) + (plistFuelRem(stagetanks,CryoFuelName)*CryoFuelMass) + (plistFuelRem(stagetanks,LiquidFuelName)*LiquidFuelMass).
 	
 	// effective ISP
 	local p is 0.
 	local avgIsp is 0.
-	Activeenginelist().
+	activeEngineList().
 	for e in aelist {
-		set avgIsp to avgIsp + e:availablethrust / ship:availablethrust * e:vacuumisp.
+		set avgIsp to avgIsp + ((e:availablethrust+0.001) / (ship:availablethrust+0.001) * e:vacuumisp).
 	}		
 	
-	if StageNumber > 1 {
+	if payloadProt = true {
 		return avgIsp*9.81*ln((ship:mass-Partlistmass(Ship:partsingroup("AG10"))) / ((ship:mass-Partlistmass(Ship:partsingroup("AG10")))-fuelmass)).
 	} else {
 		return avgIsp*9.81*ln(ship:mass / (ship:mass-fuelmass)).
@@ -25,18 +25,54 @@ Function StageDV {
 }
 
 // calulates remaining burn time for current fuel load
-Function RemainingBurn {
-	Parameter fuel.
-	Activeenginelist().
+Function remainingBurn {
+	local fuel is plistFuelRem(stagetanks,OxidizerFuelName)+plistFuelRem(stagetanks,CryoFuelName)+plistFuelRem(stagetanks,LiquidFuelName).
+	activeEngineList().
 	local ff is 0.
-	For e in aelist {
+	local idx is -1.
+	local fflist is aelist:copy().
+	
+	If Ship:partstaggedpattern("^CentralEngine"):length > 0 {
+		for p in fflist {
+			if p:tag = "CentralEngine" {
+				set idx to aelist:find(p).
+			}
+		}
+		if idx > -1 {
+			fflist:remove(idx).
+		}
+		For e in fflist {
+			set ff to (ff+e:fuelflow).
+		}
+		return fuel/(ff+0.01).		
+	} else {
+		For e in aelist {
+			set ff to (ff+e:fuelflow).
+		}
+		return fuel/(ff+0.01).
+	}
+}
+
+// calulates remaining burn time for current fuel load
+Function remainingBurnSRB {
+	activeSRBlist().
+	local fuelrem is 0.
+	local ff is 0.
+	For tank in asrblist {
+		For res in tank:resources {
+			if res:name = "SolidFuel" and res:enabled = true {
+				set fuelrem to (fuelrem + res:amount).
+			}
+		}
+	}
+	For e in asrblist {
 		set ff to (ff+e:fuelflow).
 	}
-	return fuel/(ff+0.01).
+	return fuelrem/(ff+0.01).
 }
 
 // calculates dV required to circularise at current apoapsis
-Function CircDV {
+Function circDV {
 	local v1 is (ship:body:mu * (2/(ship:apoapsis + ship:body:radius) - 2/(ship:apoapsis + ship:periapsis + 2*ship:body:radius)))^0.5.
 	local v2 is (ship:body:mu * (2/(ship:apoapsis + ship:body:radius) - 2/(2*ship:apoapsis + 2*ship:body:radius)))^0.5.
 	return v2-v1.

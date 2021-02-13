@@ -4,55 +4,6 @@
 
 @lazyglobal off.
 
-// Checks rocket is stable during staging
-Function SteeringHold {
-	Parameter t.
-	if EngstagingOverride = true {
-		Global SteeringAngle is VANG(ship:facing:vector, ship:facing:vector).
-	} else {	
-		Global SteeringAngle is VANG(steerto:vector, ship:facing:vector).
-	}
-	If SteeringAngle < 1 and StagingSteerHold = false {
-		global steertime1 is time:seconds.
-		global StagingSteerHold is true.
-	} 
-	if SteeringAngle < 1 and StagingSteerHold = true {
-		global steertime2 is time:seconds.
-	}
-	if SteeringAngle >= 1 {				//resets count if ships moves outside of 1°
-		global StagingSteerHold is false.
-		global steertime1 is 0.
-		global steertime2 is 0.
-	}
-	if StagingSteerHold = true {
-		if steertime2 - steertime1 > t {
-			return true.
-		} else {
-			return false. 
-		}
-	}
-}
-
-// Handles PitchPD use for multiple modes
-Function pitchlimit {
-	parameter m,ta,et.
-	
-	if m = 1 {
-		if ship:apoapsis > ta*0.75 or et > 100 {
-			return 0.
-		} else { 
-			return 5.
-		}
-	}
-	if m = 2 {
-		if twr() < 0.5 {
-			return 12-(twr()*10).
-		} else {
-			return 5.
-		}
-	}
-}
-
 // Locks roll to the 4 directions
 Function rollLock {
 	parameter currRoll.
@@ -97,4 +48,31 @@ function compass_for_vect {
 	} else {
 		return compass.
 	}	
+}
+
+function PitchProgram_Sqrt {
+	parameter switch_alt is 0.
+	parameter scale_factor is 0.
+	local pitch_ang to 0.
+	local maxQsteer is max(0,10 - (ship:q*25)).
+	local pitch_max is pitch_for_vect(Ship,Ship:srfprograde:forevector)+maxQsteer.
+	local pitch_min is pitch_for_vect(Ship,Ship:srfprograde:forevector)-maxQsteer.
+	local alt_diff is scale_factor*ship:body:atm:height - switch_alt.
+	
+	if ship:altitude >= switch_alt {
+		set pitch_ang to 90 - (max(5,min(85,90*sqrt((ship:altitude - switch_alt)/alt_diff)))).
+	}
+	return max(min(pitch_ang,pitch_max),pitch_min).
+}
+
+function stagingRCS {
+	parameter t.
+	
+	if time:seconds - t < 10 and time:seconds - t > 0 {
+		if throt < 0.1 {
+			rcs on.
+		}
+	} else {
+		rcs off.
+	}
 }

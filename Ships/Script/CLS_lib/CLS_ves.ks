@@ -6,38 +6,41 @@
 
 // Detects the presence of SRBs
 Function SRBDetect {
-	Parameter SRBPartlist.
-	SRBList:Clear(). SRBs:Clear().
-	For P in SRBPartlist {
-		If P:stage = (stage:number - 2) and P:HasModule("ModuleEnginesFX") and P:DryMass < P:WetMass and not P:HasModule("ModuleDecouple") and not P:HasModule("SSTUInterstageDecoupler") and not P:HasModule("ModuleAnchoredDecoupler") and not P:HasModule("SSTUCustomRadialDecoupler") {
-			SRBList:add(p).
+	Parameter plist.
+	local SRBList1 is list().
+	local SRBList2 is list().
+	global SRBs is list().
+	For P in plist {
+		If P:stage = (stage:number - 2) and P:HasModule("ModuleEnginesFX") and P:DryMass < P:WetMass and not P:HasModule("ModuleDecouple") { 
+			SRBList1:add(p).
 		}	
 	}
-	For tank in SRBList {
+	For e in SRBList1 {
+		if e:allowshutdown = false and e:throttlelock = true {
+			SRBList2:add(e).
+		}
+	}
+	For tank in SRBList2 {
 		For res in tank:resources {
 			If res:name = SolidFuelName and res:amount > 1 {
 				SRBs:add(tank).
 			}
 		}
 	}
-	return SRBs.
-}
-
-// Sets mode based on presence of SRBs
-Function ModeDetect {
-	If SRBdetect(Ship:parts):length > 0 {
-		Set mode to 1.
+	if SRBs:length > 0 {
+		set mode to 1.
 	} else {
-		Set mode to 0.
+		set mode to 0.
 	}
 }
 
 // Creates a list of all engines
 Function EngineList {
-	elist:clear().
+	global elist is list().
+	//elist:clear().
 	For P in ship:parts {
-		If P:hasmodule("ModuleEngines") or P:hasmodule("ModuleEnginesFX") or P:hasmodule("ModuleEnginesRF"){
-			If not P:HASMODULE("MODULEDECOUPLE") and not P:hasmodule("SSTUAutoDepletionDecoupler") {
+		If P:hasmodule("ModuleEngines") or P:hasmodule("ModuleEnginesFX") or P:hasmodule("ModuleEnginesRF") {
+			If not P:hasmodule("moduledecouple") and not P:hasmodule("SSTUAutoDepletionDecoupler") {
 				elist:add(p).
 			}
 		}
@@ -47,7 +50,7 @@ Function EngineList {
 // Creates a list of all active engines
 Function Activeenginelist {
 	Enginelist().
-	aelist:clear().
+	global aelist is list().
 	For e in elist {
 		If e:ignition and e:allowshutdown {
 			aelist:add(e).
@@ -55,13 +58,14 @@ Function Activeenginelist {
 	}
 }
 
-// Creates a list of engines in the next stage
-Function NextStageEngineList {
-	EngineList().
-	nseList:clear().
-	For P in elist {
-		if p:stage = (stage:number-1) {
-			nseList:add(p).
+// Creates a list of all active engines
+Function ActiveSRBlist {
+	Enginelist().
+	global asrblist is list().
+	//asrblist:clear().
+	For e in elist {
+		If e:ignition and e:allowshutdown = false and e:throttlelock = true {
+			asrblist:add(e).
 		}
 	}
 }
@@ -84,7 +88,7 @@ Function Ullagedetectfunc {
 // calculates total mass of a partlist
 Function Partlistmass {
 	Parameter custompartlist.
-	declare local msum to 0.
+	local msum is 0.
 	For p in custompartlist {
 		set msum to msum + p:mass.
 	}
@@ -94,7 +98,7 @@ Function Partlistmass {
 // calculates total available thrust of a partlist
 Function Partlistavthrust {
 	Parameter custompartlist.
-	declare local avtsum to 0.
+	local avtsum is 0.
 	For e in custompartlist {
 		set avtsum to avtsum + e:availablethrust.
 	}
@@ -104,7 +108,7 @@ Function Partlistavthrust {
 // calculates total current thrust of a partlist accounting for thrust limits or thrust curves
 Function Partlistcurthrust {
 	Parameter custompartlist.
-	declare local curtsum to 0.
+	local curtsum is 0.
 	For e in custompartlist {
 		set curtsum to curtsum + e:thrust.
 	}

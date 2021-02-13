@@ -5,45 +5,35 @@
 @lazyglobal off.
 
 // Controls Warp rate. Cancels time warp for launch, abort & staging. Prevents warp going over 2x to maintain code stability
-Function Warpcontrol {
-	If runmode = -666 or launchcomplete = true {
-		If warp > 0 Set warp to 0.
-	}
-	If runMode = -1 {
-		if cdown > -60 {
-			If warp > 0 Set warp to 0.
-		} else {
-			If warp > 3 Set warp to 3.
-		}
-	}
-	If runMode >= 0 {
-		If staginginprogress or ImpendingStaging {
-			If warp > 0 Set warp to 0.
-		} else if runmode = 4 {
-			if time:seconds < burnStartTime-60 {
-				If warp > 2 Set warp to 2.
-			} else {
-				Set warp to 0.
-			}
-		} else if runmode = 5 {
-			Set warp to 0.
-		} else {
-			If warp > 1 Set warp to 1.
-		}
+Function warpControl {
+	parameter runMode.
+	local rMode is list(-666,-3,-2,-1,0,1,2,3,4,5,6).
+	local warpLimit is list(0,0,0,0,1,1,1,1,1,0,1).
+	
+	If runMode = -1 and cdown < -60 {
+		return 3.
+	} else if staginginprogress or ImpendingStaging {
+		return 0.
+	} else if launchcomplete {
+		return 0.
+	} else if runMode = 4 and ship:altitude > body:atm:height and time:seconds < burnStartTime-90 {
+		return 2.
+	} else {
+		return warpLimit[rMode:find(runMode)].
 	}
 }
 
 // Takes a "hh:mm:ss" input for a specific launch time and calculates seconds until this time.
-Function SecToLaunch {
-	Parameter STLInput.
-	Local STL is STLInput:tostring.
-	Local TotTime is time:seconds:tostring.
+Function secToLaunch {
+	Parameter stlInput.
+	Local stl is stlInput:tostring.
+	Local totTime is time:seconds:tostring.
 	
-	if STL:contains(":") {
-		local H is STL:split(":")[0].
-		local M is STL:split(":")[1].
-		local S is STL:split(":")[2].
-		local Ss is "0." + TotTime:split(".")[1].
+	if stl:contains(":") {
+		local H is stl:split(":")[0].
+		local M is stl:split(":")[1].
+		local S is stl:split(":")[2].
+		local Ss is "0." + totTime:split(".")[1].
 		
 		Local TodaySeconds is time:second + Ss:tonumber() + (time:minute*60) + (time:hour*60*60).
 		Local TargetSeconds to S:tonumber() + (M:tonumber()*60) + (H:tonumber()*60*60).
@@ -55,6 +45,6 @@ Function SecToLaunch {
 		}
 		
 	} else {
-		return STLInput.
+		return stlInput.
 	}
 }

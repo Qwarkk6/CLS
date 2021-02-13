@@ -22,6 +22,10 @@ FUNCTION padding {
 	} ELSE {
 		SET returnString TO ABS(adv_ceiling(num,trailingLength)):TOSTRING.
 	}
+	
+	if num < 0 {
+		set leadingLength to leadingLength-1.
+	}
 
 	IF trailingLength > 0 {
 		IF NOT returnString:CONTAINS(".") {
