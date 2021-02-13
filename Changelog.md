@@ -10,7 +10,7 @@ Changelog
 - Fixed error in azimuth calculations when handling launches into high apoapsis.
 - Added an abort script (Abort.ks) which automatically runs if CLS detects an abort parameter has been met.
 
-<b>v1.1.0 (02/02/21)</b>
+<b>v1.1.0 (13/02/21)</b>
 
 Major Changes:
 - New GUI system for adjusting launch parameters, handled by a new CLS_parameters library. Instead of running 'CLS(250,90 etc).' all that is needed now is 'run cls.'
