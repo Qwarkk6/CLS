@@ -7,8 +7,8 @@
 
 //			Usage:			run CLS.						Only required input. Opens GUI for user to input their launch parameters.
 //
-//			GUI settings:	Desired Apoapsis	Custom: 	Allows user to input their chosen target apoapsis in km.
-//												Highest: 	Launches the vehicle into the highest possible circular orbit based on its dV.
+//			GUI settings:	Desired Apoapsis	Custom: 	Allows user to input their chosen target apoapsis in km. Maximum is 500km.
+//												Highest: 	Launches the vehicle into the highest possible circular orbit based on its dV. Maximum is 500km.
 //							
 //							Desired Inclination:			The inclination of the final orbit. Positive number = ascending launch azimuth. Negative number = descending launch azimuth
 //							
@@ -63,8 +63,10 @@ set ascentFactor to 0.7.		//Specifies the altitude at which the gravity turn wil
 // Fuel configuration
 // Change these to configure non-stock fuels. Do not remove CryoFuelName (Even if you are using stock fuels).
 // If you do change them, make sure to change the corresponding fuel mass (you may have to dig in resource config files)
-Set LiquidFuelName to "LiquidFuel".
-Set OxidizerFuelName to "Oxidizer".
+Set LiquidFuelName to "RP-1".
+Set OxidizerFuelName to "LOx".
+//Set LiquidFuelName to "LiquidFuel".
+//Set OxidizerFuelName to "Oxidizer".
 Set CryoFuelName to "LqdHydrogen".
 Set SolidFuelName to "SolidFuel".
 Set OxidizerFuelMass to 0.005.
