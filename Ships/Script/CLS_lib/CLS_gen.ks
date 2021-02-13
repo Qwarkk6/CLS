@@ -10,16 +10,26 @@ Function warpControl {
 	local rMode is list(-666,-3,-2,-1,0,1,2,3,4,5,6).
 	local warpLimit is list(0,0,0,0,1,1,1,1,1,0,1).
 	
-	If runMode = -1 and cdown < -60 {
-		return 3.
+	If runMode = -1 and time:seconds - launchtime < -60 {
+		if warp > 3 {
+			set warp to 3.
+		}
 	} else if staginginprogress or ImpendingStaging {
-		return 0.
+		if warp > 0 {
+			set warp to 0.
+		}
 	} else if launchcomplete {
-		return 0.
+		if warp > 0 {
+			set warp to 0.
+		}
 	} else if runMode = 4 and ship:altitude > body:atm:height and time:seconds < burnStartTime-90 {
-		return 2.
+		if warp > 2 {
+			set warp to 2.
+		}
 	} else {
-		return warpLimit[rMode:find(runMode)].
+		if warp > warpLimit[rMode:find(runMode)] {
+			set warp to warpLimit[rMode:find(runMode)].
+		}
 	}
 }
 
