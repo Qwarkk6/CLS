@@ -526,7 +526,7 @@ Until launchcomplete {
 		}
 		
 		//Throttles to 0.1 for fine tuning final apoapsis
-		If ship:apoapsis >= (targetapoapsis-2500) and apoapsis975 = false and not staginginprogress {
+		If ship:apoapsis >= (targetapoapsis-4000) and apoapsis975 = false and not staginginprogress {
 			Set apoapsis975 to true.
 			Set throttletime to Time:seconds.
 			Set currentthrottle to throttle.
@@ -553,7 +553,7 @@ Until launchcomplete {
 		}
 		
 		//End of ascent
-		if ship:apoapsis >= (targetapoapsis*0.9998) {
+		if ship:apoapsis >= (targetapoapsis-250) {
 			if throt > 0 {
 				scrollprint(enginereadout(currentstagenum) + " Cut-Off ").
 				scrollprint("          Parking Orbit Confirmed").
