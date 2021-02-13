@@ -50,6 +50,8 @@ function compass_for_vect {
 	}	
 }
 
+// Calculates pitch for ascent
+// Credit to TheGreatFez for this function. I have modified it slightly to limit angle of attack during high dynamic pressure
 function PitchProgram_Sqrt {
 	parameter switch_alt is 0.
 	parameter scale_factor is 0.
