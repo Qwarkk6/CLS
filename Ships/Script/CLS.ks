@@ -65,7 +65,6 @@ set ascentFactor to 0.7.		//Specifies the altitude at which the gravity turn wil
 // If you do change them, make sure to change the corresponding fuel mass (you may have to dig in resource config files)
 Set LiquidFuelName to "LiquidFuel".
 Set OxidizerFuelName to "Oxidizer".
-
 Set CryoFuelName to "LqdHydrogen".
 Set SolidFuelName to "SolidFuel".
 Set OxidizerFuelMass to 0.005.
@@ -84,7 +83,7 @@ Set throttledelay to 0.5. 				// Delay after stage seperation before engine thro
 
 // Crew abort check
 // Whether or not to check if there is anything in the abort action group prior to crewed launches. If true, CLS will abort any crewed launch with no abort action groups.
-set crewAbortCheck to false.
+set crewAbortCheck to true.
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -173,9 +172,7 @@ Until launchcomplete {
 	// Initiate looping functions
 	Eventlog().								// Initiates mission log readouts in the body of the terminal
 	AscentHUD().							// Initiates the HUD information at the bottom of the terminal.
-	If warp > 0 { 							// Activates warp control function anytime warp speed is manually adjusted
-		set warp to Warpcontrol(runmode).
-	}
+	warpControl(runmode).		// Activates warp control function anytime warp speed is manually adjusted
 
 	//Log feature - logs data to the csv file created by LogInitialise()
 	if csvLog and missiontime > 0 {
