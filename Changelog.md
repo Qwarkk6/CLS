@@ -10,7 +10,7 @@ Changelog
 - Fixed error in azimuth calculations when handling launches into high apoapsis.
 - Added an abort script (Abort.ks) which automatically runs if CLS detects an abort parameter has been met.
 
-<b>v1.1.0 (13/02/21)</b>
+<b>v1.2.0 (13/02/21)</b>
 
 Major Changes:
 - New GUI system for adjusting launch parameters, handled by a new CLS_parameters library. Instead of running 'CLS(250,90 etc).' all that is needed now is 'run cls.'
@@ -43,3 +43,8 @@ Minor Changes:
 - Multi-stage vehicles (Not SSTOs) that reach the target apoapsis without staging will now stage at once out of the atmosphere so that upper stages handle circularisation. 
 - Fixed an error in calculating circularisation burn time if the script is waiting to leave the atmopshere before staging (as explained above). Script will now wait until after staging before creating the maneuver node.
 - Removed the throttle down prior to stage seperation. This was in place to limit sudden g-force spikes but interfered with other throttle up/down code in the script.
+
+<b>v1.2.1 (07/03/21)</b>
+
+- Fixed an error caused when target apoapsis is reached prior to stage seperation, causing an undefined variable to be called.
+- Updated mode detection to better determine if the vessel is using SRBs and adjust its twr calculations accordingly.
