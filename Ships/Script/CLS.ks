@@ -63,10 +63,8 @@ set ascentFactor to 0.7.		//Specifies the altitude at which the gravity turn wil
 // Fuel configuration
 // Change these to configure non-stock fuels. Do not remove CryoFuelName (Even if you are using stock fuels).
 // If you do change them, make sure to change the corresponding fuel mass (you may have to dig in resource config files)
-Set LiquidFuelName to "RP-1".
-Set OxidizerFuelName to "LOx".
-//Set LiquidFuelName to "LiquidFuel".
-//Set OxidizerFuelName to "Oxidizer".
+Set LiquidFuelName to "LiquidFuel".
+Set OxidizerFuelName to "Oxidizer".
 Set CryoFuelName to "LqdHydrogen".
 Set SolidFuelName to "SolidFuel".
 Set OxidizerFuelMass to 0.005.
@@ -246,16 +244,11 @@ Until launchcomplete {
 				Set PayloadProtection to true.
 				For P in Ship:partsingroup("AG10") {
 					Set fairingstage to P:Stage.
-					If P:hasmodule("ProceduralFairingSide") OR P:hasmodule("ModuleProceduralFairing") {
-						Set PayloadProtectionConfig to "Fairings".
-					} else If P:hasmodule("Moduleengines") or P:hasmodule("ModuleenginesFX") {
+					If P:hasmodule("Moduleengines") or P:hasmodule("ModuleenginesFX") {
 						Set PayloadProtectionConfig to "LES".
+					} else {
+						Set PayloadProtectionConfig to "Fairings".
 					}
-				}
-				If PayloadProtectionConfig = "-" {
-					Set scrubreason to "Major AG10 Advisory".
-					Set runmode to -3.
-				} else {
 					scrollprint(PayloadProtectionConfig + " Configured For Launch").
 				}
 			} else {
@@ -604,6 +597,7 @@ Until launchcomplete {
 			}
 		} else {
 			set runmode to 4.
+			set burnStartTime to time:seconds+99999999.
 		}
 	}
 	
@@ -760,7 +754,6 @@ Until launchcomplete {
 			FuelTank(OxidizerFuelName).
 			Activeenginelist().
 			Set numparts to Ship:parts:length.
-			Set throt to TWRthrottle(maxAscentTWR).
 			Set booststagetime to Time:seconds+100000.
 			If mode = 0 {
 				scrollprint("External Tank Jettison").
@@ -774,6 +767,7 @@ Until launchcomplete {
 				scrollprint("SRB Jettison").
 				SRBDetect(ship:parts).
 			}
+			Set throt to TWRthrottle(maxAscentTWR).
 			set staginginprogress to false.
 			set SRBstagingOverride to false.
 			rcs off.
