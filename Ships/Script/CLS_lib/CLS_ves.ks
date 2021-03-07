@@ -11,13 +11,25 @@ Function SRBDetect {
 	local SRBList2 is list().
 	global SRBs is list().
 	For P in plist {
-		If P:stage = (stage:number - 2) and P:HasModule("ModuleEnginesFX") and P:DryMass < P:WetMass and not P:HasModule("ModuleDecouple") { 
-			SRBList1:add(p).
-		}	
+		if runMode = -1 {
+			If P:stage = (stage:number - 2) and P:HasModule("ModuleEnginesFX") and P:DryMass < P:WetMass and not P:HasModule("ModuleDecouple") { 
+				SRBList1:add(p).
+			}	
+		} else {
+			If P:HasModule("ModuleEnginesFX") and P:DryMass < P:WetMass and not P:HasModule("ModuleDecouple") { 
+				SRBList1:add(p).
+			}
+		}
 	}
 	For e in SRBList1 {
-		if e:allowshutdown = false and e:throttlelock = true {
-			SRBList2:add(e).
+		if runMode = -1 {
+			if e:allowshutdown = false and e:throttlelock = true {
+				SRBList2:add(e).
+			}
+		} else {
+			if e:allowshutdown = false and e:throttlelock = true and e:ignition = true {
+				SRBList2:add(e).
+			}
 		}
 	}
 	For tank in SRBList2 {
