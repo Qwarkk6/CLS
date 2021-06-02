@@ -23,7 +23,8 @@ Function EngineFlameout {
 
 //Resource monitoring
 function AbortResMonitor {	
-	For res in ship:resources {
+	list resources in resList.
+	For res in reslist {
 		If res:Name = "ElectricCharge" {
 			set EC to (Res:Amount/Res:Capacity)*100.
 		}
@@ -41,36 +42,36 @@ function AbortHUD {
 	Print "------------------" at (0,3).
 }
 
+//Initialise
 clearscreen.
+set script to "Running".
 runpath("0:/cls_lib/lib_num_to_formatted_str.ks").
 runpath("0:/cls_lib/lib_navball.ks").
 runpath("0:/cls_lib/CLS_nav.ks").
-toggle abort.
-set rcsFuel to 0.
-set EC to 0.
 RCS on. SAS off.
-set entrytime to time:seconds.
+abort on.
+
+//HUD setup
+set shipStat to "Abort Burn".
 
 //Steering setup
 set Yaw to ship:facing:yaw.
 set Roll to ship:facing:roll.
 set Pitch to ship:facing:pitch.
-set steerto to heading(Pitch,Yaw,Roll).
-lock steering to steerto.
+set entrytime to time:seconds.
+lock tRate to (time:seconds - entrytime)*3.
+lock steering to R(Pitch+tRate,Yaw+tRate,Roll).
 
-until EngineFlameout() = true {
-	set tRate to (time:seconds - entrytime)*2.5.
-	set steerto to R(Pitch+tRate,Yaw+tRate,Roll).
-	set shipStat to "Abort Burn".
+wait until ship:verticalspeed > 1.
+
+when script = "Running" then {
 	AbortResMonitor(). AbortHUD().
-	wait 0.001.
+	return true.
 }
 
-until ship:verticalspeed < 0 or pitch_for_vect(ship,ship:srfprograde:forevector) < 10 {
-	set steerto to R(Pitch+tRate,Yaw+tRate,Roll).
+when EngineFlameout() = true then {
 	set shipStat to "Coasting".
-	AbortResMonitor(). AbortHUD().
-	wait 0.001.
 }
 
-runpath("0:/ReEntry.ks").
+wait until ship:verticalspeed < 0 or pitch_for_vect(ship,ship:srfprograde:forevector) < 10.
+runpath("0:/ChuteDescent.ks").
