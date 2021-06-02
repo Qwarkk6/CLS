@@ -6,56 +6,57 @@
 // I have removed some functions that were not necessary for CLS to run.
 // The KSLib team have built an incrible library of Kerboscript, available at https://github.com/KSP-KOS/KSLib
 
-FUNCTION padding {
-	PARAMETER num,                // number to be formatted
-	leadingLength,                // minimum digits to the left of the decimal
-	trailingLength,               // digits to the right of the decimal
-	positiveLeadingSpace IS TRUE, // whether to prepend a single space to the output
-	roundType IS 0.               // 0 for normal rounding, 1 for floor, 2 for ceiling
+function padding {
+	Parameter num.               		// number to be formatted
+	Parameter leadingLength.                // minimum digits to the left of the decimal
+	Parameter trailingLength.               // digits to the right of the decimal
+	Parameter positiveLeadingSpace is true. // whether to prepend a single space to the output
+	Parameter roundType is 0.               // 0 for normal rounding, 1 for floor, 2 for ceiling
 
-	LOCAL returnString IS "".
-	//LOCAL returnString IS ABS(ROUND(num,trailingLength)):TOSTRING.
-	IF roundType = 0 {
-		SET returnString TO ABS(ROUND(num,trailingLength)):TOSTRING.
-	} ELSE IF roundType = 1 {
-		SET returnString TO ABS(adv_floor(num,trailingLength)):TOSTRING.
-	} ELSE {
-		SET returnString TO ABS(adv_ceiling(num,trailingLength)):TOSTRING.
+	Local returnString is "".
+	If roundType = 0 {
+		set returnString to ABS(round(num,trailingLength)):tostring.
+	} else if roundType = 1 {
+		set returnString to ABS(adv_floor(num,trailingLength)):tostring.
+	} else {
+		set returnString to ABS(adv_ceiling(num,trailingLength)):tostring.
 	}
 	
 	if num < 0 {
 		set leadingLength to leadingLength-1.
 	}
 
-	IF trailingLength > 0 {
-		IF NOT returnString:CONTAINS(".") {
-			SET returnString TO returnString + ".0".
+	If trailingLength > 0 {
+		If not returnString:CONTAINS(".") {
+			set returnString to returnString + ".0".
 		}
-		UNTIL returnString:SPLIT(".")[1]:LENGTH >= trailingLength { SET returnString TO returnString + "0". }
-		UNTIL returnString:SPLIT(".")[0]:LENGTH >= leadingLength { SET returnString TO "0" + returnString. }
-	} ELSE {
-		UNTIL returnString:LENGTH >= leadingLength { SET returnString TO "0" + returnString. }
+		until returnString:split(".")[1]:length >= trailingLength { set returnString to returnString + "0". }
+		until returnString:split(".")[0]:length >= leadingLength { set returnString to "0" + returnString. }
+	} else {
+		until returnString:length >= leadingLength { set returnString to "0" + returnString. }
 	}
 
-	IF num < 0 {
-		RETURN "-" + returnString.
-	} ELSE {
-		IF positiveLeadingSpace {
-			RETURN " " + returnString.
-		} ELSE {
-			RETURN returnString.
+	If num < 0 {
+		return "-" + returnString.
+	} else {
+		If positiveLeadingSpace {
+			return " " + returnString.
+		} else {
+			return returnString.
 		}
 	}
 }
 
-LOCAL FUNCTION adv_floor {
-	PARAMETER num,dp.
-	LOCAL multiplier IS 10^dp.
-	RETURN FLOOR(num * multiplier)/multiplier.
+Local function adv_floor {
+	Parameter num.
+	Parameter dp.
+	Local multiplier is 10^dp.
+	return Floor(num * multiplier)/multiplier.
 }
 
-LOCAL FUNCTION adv_ceiling {
-	PARAMETER num,dp.
-	LOCAL multiplier IS 10^dp.
-	RETURN CEILING(num * multiplier)/multiplier.
+Local function adv_ceiling {
+	Parameter num.
+	Parameter dp.
+	Local multiplier is 10^dp.
+	return CEILING(num * multiplier)/multiplier.
 }

@@ -6,61 +6,67 @@
 
 // calculates remaining dV of current stage
 Function stageDV {
-	Parameter payloadProt.			// Are fairings/LES still present
-	Local fuelmass is (plistFuelRem(stagetanks,OxidizerFuelName)*OxidizerFuelMass) + (plistFuelRem(stagetanks,CryoFuelName)*CryoFuelMass) + (plistFuelRem(stagetanks,LiquidFuelName)*LiquidFuelMass).
-	
+	//Parameter payloadProt.			// Are fairings/LES still present
+	Local fuelmass is plistFuelRem(stagetanks,ResourceOne)*ResourceOneMass + plistFuelRem(stagetanks,ResourceTwo)*ResourceTwoMass.
+	local ag10 is Partlistmass(Ship:partsingroup("AG10")).
+
 	// effective ISP
 	local p is 0.
 	local avgIsp is 0.
+	local avT is ship:availablethrust+0.001.
 	activeEngineList().
 	for e in aelist {
-		set avgIsp to avgIsp + ((e:availablethrust+0.001) / (ship:availablethrust+0.001) * e:vacuumisp).
+		local t is e:availablethrust+0.001.
+		set avgIsp to avgIsp + t / (avT * e:vacuumisp).
 	}		
 	
-	if payloadProt = true {
-		return avgIsp*9.81*ln((ship:mass-Partlistmass(Ship:partsingroup("AG10"))) / ((ship:mass-Partlistmass(Ship:partsingroup("AG10")))-fuelmass)).
-	} else {
-		return avgIsp*9.81*ln(ship:mass / (ship:mass-fuelmass)).
-	}
+	return avgIsp*constant:g0*ln((ship:mass-ag10) / (ship:mass-ag10-fuelmass)).
+	
+	//if payloadProt = true {
+	//	return avgIsp*constant:g0*ln((ship:mass-Partlistmass(Ship:partsingroup("AG10"))) / ((ship:mass-Partlistmass(Ship:partsingroup("AG10")))-fuelmass)).
+	//} else {
+	//	return avgIsp*constant:g0*ln(ship:mass / (ship:mass-fuelmass)).
+	//}
 }
 
 // calulates remaining burn time for current fuel load
 Function remainingBurn {
-	local fuel is plistFuelRem(stagetanks,OxidizerFuelName)+plistFuelRem(stagetanks,CryoFuelName)+plistFuelRem(stagetanks,LiquidFuelName).
+	local fuel is plistFuelRem(stagetanks,ResourceOne)+plistFuelRem(stagetanks,ResourceTwo).
 	activeEngineList().
-	local ff is 0.
-	local idx is -1.
+	local ff is 0.01.
+	//local idx is -1.
 	local fflist is aelist:copy().
 	
 	If Ship:partstaggedpattern("^CentralEngine"):length > 0 {
 		for p in fflist {
 			if p:tag = "CentralEngine" {
-				set idx to aelist:find(p).
+				local idx is aelist:find(p).
+				fflist:remove(idx).
 			}
 		}
-		if idx > -1 {
-			fflist:remove(idx).
-		}
+		//if idx > -1 {
+		//	fflist:remove(idx).
+		//}
 		For e in fflist {
-			set ff to (ff+e:fuelflow).
+			set ff to ff+e:fuelflow.
 		}
-		return fuel/(ff+0.01).		
+		return fuel/ff.		
 	} else {
 		For e in aelist {
-			set ff to (ff+e:fuelflow).
+			set ff to ff+e:fuelflow.
 		}
-		return fuel/(ff+0.01).
+		return fuel/ff.
 	}
 }
 
 // calulates remaining burn time for current fuel load
 Function remainingBurnSRB {
 	activeSRBlist().
-	local fuelrem is 0.
+	local fuelrem is 0.01.
 	local ff is 0.
 	For tank in asrblist {
 		For res in tank:resources {
-			if res:name = "SolidFuel" and res:enabled = true {
+			if res:name = SolidFuelName and res:enabled = true {
 				set fuelrem to (fuelrem + res:amount).
 			}
 		}
@@ -68,7 +74,7 @@ Function remainingBurnSRB {
 	For e in asrblist {
 		set ff to (ff+e:fuelflow).
 	}
-	return fuelrem/(ff+0.01).
+	return fuelrem/ff.
 }
 
 // calculates dV required to circularise at current apoapsis
@@ -80,6 +86,7 @@ Function circDV {
 
 // calculates burn time for the next manuever node. ActiveEngines() needs to be run prior
 Function nodeBurnTime {
+	Activeenginelist().
 	local dV is nextnode:deltav:mag.
 	local f is ship:availablethrust.
 	local m is ship:mass.
@@ -98,6 +105,7 @@ Function nodeBurnTime {
 // calculates half burn time for the next manuever node in order to calculate when to start the burn. ActiveEngines() needs to be run prior
 Function nodeBurnStart {
 	Parameter MnVnode.
+	Activeenginelist().
 	local dV is MnVnode:deltav:mag/2.
 	local f is ship:availablethrust.
 	local m is ship:mass.

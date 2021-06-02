@@ -8,14 +8,14 @@
 Function IncCorr {
 	Parameter desiredInc.
 	
-	local V_orb is sqrt(body:mu/ (body:radius + ship:altitude)).
+	local V_orb is sqrt(body:mu/(body:radius + ship:altitude)).
 	if ship:velocity:orbit:mag > V_orb {
 		set V_orb to ship:velocity:orbit:mag.
 	}
 	
 	// project desired orbit onto surface heading
-	local az_orb is arcsin ( cos(desiredInc) / cos(ship:latitude)).
-	if (desiredInc < 0) {
+	local az_orb is arcsin(cos(desiredInc)/cos(ship:latitude)).
+	if desiredInc < 0 {
 		set az_orb to 180 - az_orb.
 	}
 	

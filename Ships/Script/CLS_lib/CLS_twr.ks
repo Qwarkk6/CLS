@@ -6,35 +6,49 @@
 
 // determines acceleration due to gravity
 Function adtg {
-	return(constant:g*body:mass)/((body:radius+ship:altitude)^2).
+	return(constant:g*body:mass)/(body:radius+ship:altitude)^2.
 }
 	
 // calculates twr based on mode
 Function twr {
+	local throt is min(throttle,1).
+	local g is adtg().
 	if mode = 0 {
-		return min(throttle,1)*((ship:availablethrust+0.1)/(ship:mass*adtg())).
+		local t is ship:availablethrust+0.1.
 	} else {
-		return ((min(throttle,1)*(Partlistavthrust(aelist)+0.1))+PartlistCurThrust(SRBs))/(ship:mass*adtg()).
+		local t is Partlistavthrust(aelist)+PartlistCurThrust(SRBs)+0.1.
 	}
+	return (throt*t)/(ship:mass*g).
 }
 	
 // calculates maximum twr if all engines were at max thrust
 Function maxtwr {
-	return (Ship:availablethrust+0.1)/(ship:mass*adtg()).
+	local t is ship:availablethrust+0.1.
+	local g is adtg().
+	return t/(ship:mass*g).
 }
 	
 // calculates throttle required to achieve a given TWR based on mode
 Function twrthrottle {
 	parameter targetTWR.
+	local g is adtg().
 	if mode = 0 {
-		return Max(0.01,Min(1,((ship:mass*adtg())/(ship:availablethrust+0.1))*targetTWR)).
+		local t is ship:availablethrust+0.1.
+		local twrThrot is (ship:mass*g)/t*targetTWR.
 	} else {
-		return Max(0.01,Min(1,((ship:mass*adtg()*targetTWR)-PartlistCurThrust(SRBs))/partlistavthrust(aelist))).
+		local t is partlistavthrust(aelist).
+		local tC is PartlistCurThrust(SRBs).
+		local twrThrot is (ship:mass*g*targetTWR-tC)/t.
 	}
+	return Max(0.01,Min(1,twrThrot).
 }
 	
 // calculates post SRB seperation throttle required to achieve a given TWR
 Function srbsepthrottle {
 	parameter targetTWR.
-	return Max(0.01,Min(1,(((ship:mass-Partlistmass(SRBs))*adtg())/(partlistavthrust(aelist)+0.1))*targetTWR)).
+	local g is adtg().
+	local t is partlistavthrust(aelist).
+	local m is Partlistmass(SRBs).
+	local sepThrot is ((ship:mass-m)*g)/t*targetTWR.
+	return Max(0.01,Min(1,sepThrot)).
 }

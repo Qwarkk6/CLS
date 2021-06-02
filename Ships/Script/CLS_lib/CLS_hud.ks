@@ -7,36 +7,37 @@
 // Scroll print function
 // Credit to /u/only_to_downvote / mileshatem for the original (and much more straightforward) scrollprint function that this is an adaptation of
 Function scrollprint {
-	Declare parameter nextprint.
-	local maxlinestoprint is 34.	// Max number of lines in scrolling print list
-	local listlinestart is 6.		// First line For scrolling print list
-	if nextprint = "$" {
+	Parameter nextprint.
+	Parameter timeStamp is true.
+	local maxlinestoprint is 33.	// Max number of lines in scrolling print list
+	local listlinestart is 6.	// First line For scrolling print list
+	local TtLaunch is "T" + d_mt(cdown).
+	local ElapsedTime is "T" + d_mt(missiontime).
+
+	if timeStamp = true {
 		if runmode = -1 {
-			printlist:add("T" + d_mt(cdown)).
+			printlist:add(TtLaunch + " - " + nextprint).
 		} else {
-			printlist:add("T" + d_mt(missiontime)).
+			printlist:add(ElapsedTime + " - " + nextprint).
 		}
-	} else if runmode = -2 or runmode = -3 {			
+	} else {
 		printlist:add(nextprint).
-	} else if not printlisthistory:contains(nextprint) {	
-		if nextprint:startswith("   ") {
-			printlist:add(nextprint).
-		} else if runmode = -1 {
-			printlist:add("T" + d_mt(cdown) + " - " + nextprint).
-		} else {
-			printlist:add("T" + d_mt(missiontime) + " - " + nextprint).
-		}
 	}
-	//printlisthistory:add(nextprint).
-	if not printlisthistory:contains(nextprint) or nextprint = "$" or runmode = -2 or runmode = -3 {
-		if printlist:length = maxlinestoprint {printlist:remove(0).}
-		Local currentline is listlinestart.
+
+	if printlist:length < maxlinestoprint {
 		For printline in printlist {
-			Print "                                                 " at (0,currentLine).
-			Print printline at (0,currentline).
-			Set currentline to currentline+1.
-		}	
-		printlisthistory:add(nextprint).
+			print printlist[printlist:length-1] at (0,(printlist:length-1)+listlinestart).
+		}
+	} else {
+		printlist:remove(0).
+		local currentline is listlinestart.
+		until currentLine = 38 {
+			For printline in printlist {
+				Print "                                                 " at (0,currentLine).
+				Print printline at (0,currentline).
+				Set currentline to currentline+1.
+			}
+		}
 	}
 }
 
@@ -44,7 +45,7 @@ Function scrollprint {
 Function t_o_d {
 	parameter ts.
 	
-	global hpd is 6.
+	global hpd is round(body:rotationperiod).
 	global dd is floor(ts/(hpd*3600)).  
 	global hh is floor((ts-hpd*3600*dd)/3600).  
 	global mm is floor((ts-3600*hh-hpd*3600*dd)/60).  
@@ -112,13 +113,9 @@ Function engineReadout {
 // Periodic readouts for vehicle speed, altitude and downrange distance
 Function eventLog {
 	local logTimeIncrement is 60.
-	local launchLoc is kerbin:geopositionlatlng(-0.0972601544390867,-74.5576823578623).
 	local shipGEO is ship:geoposition.
 	
 	If runMode > 1 {
-		If ship:altitude >= body:atm:height {
-			scrollPrint("Karman Line Reached").
-		}
 		If missiontime >= logTime {
 			
 			//Downrange calculations
@@ -128,8 +125,8 @@ Function eventLog {
 			local downRangeDist is distAng * constant:degtorad * ship:body:radius.
 			
 			scrollPrint("Speed: "+FLOOR(Ship:AIRSPEED*3.6) + "km/h").
-			scrollPrint("          Altitude: "+ROUND(Altitude/1000,2)+"km").
-			scrollPrint("          Downrange: "+ROUND(downRangeDist/1000,2)+"km").
+			scrollPrint("          Altitude: "+ROUND(Altitude/1000,2)+"km",false).
+			scrollPrint("          Downrange: "+ROUND(downRangeDist/1000,2)+"km",false).
 			If runMode < 3 {
 				Set logTime to logTime + (logTimeIncrement).
 			} else {
@@ -148,7 +145,7 @@ Function HUDinit {
 	
 	Print Ship:name + " Launch Sequence Initialised" at (0,0).
 	Print "Target Launch Time: NET " + T_O_D(launchtime) at (0,1).
-	if targetapoapsis = 500000 {
+	if targetapoapsis = maxApo {
 		Print "Target Parking Orbit: Highest Possible" at (0,2).
 	} else {
 		Print "Target Parking Orbit: " + Ceiling(targetapoapsis,2) + "m" at (0,2).
@@ -168,12 +165,12 @@ Function HUDinit {
 Function countdown {
 	Parameter tminus.
 	Parameter cdown.
-	local cdlist is list(list(20,19,17,15,13,11,9,8,7,5,4),list("Startup","$","$","$","$","$","$","Range is Green","$","$","$")).
+	local cdlist is list(19,17,15,13,11,9,8,7,5,4).
 	
-	if cdlist[0][cdownreadout] = tminus and tminus >= 3 {
+	if cdlist[cdownreadout] = tminus and tminus > 3 {
 		if ABS(cdown) <= tminus {
-			scrollPrint(cdlist[1][cdownreadout]).
-			set cdownreadout to min(cdownreadout+1,10).
+			scrollPrint("T" + d_mt(cdown),false).
+			set cdownreadout to min(cdownreadout+1,9).
 			global tminus is tminus-1.
 		}
 	} 
@@ -190,11 +187,19 @@ Function AscentHUD {
 	local hud_var2 is "Mode:  " + mode.
 	local hud_twr is "TWR:  " + padding(Round(max(twr(),0),2),1,2,false).
 	local hud_apo is "Apo:  000s ".
-	local hud_fuel is "Fuel: " + padding(min(999,Round(RemainingBurn())),3,0,false) + "s".
+	local hud_fuel is "Fuel: " + padding(0,3,0,false) + "s".
 	local hud_azimuth is "Head:  " + padding(Round(launchazimuth,1),2,1,false) + "°".
 	
 	if runmode > -1 {
 		set hud_apo to "Apo:  " + padding(round(min(999,eta:apoapsis)),3,0,false) + "s ".
+		if mode = 0 {
+			set hud_fuel to "Fuel: " + padding(min(999,Round(RemainingBurn())),3,0,false) + "s".
+			if RemainingBurn() > 999 {
+				set hud_fuel to "Fuel: 999s".
+			}
+		} else {
+			set hud_fuel to "Fuel: " + padding(min(999,Round(remainingBurnSRB())),3,0,false) + "s".
+		}
 	}
 	If staginginprogress or ImpendingStaging {
 		set hud_staging to "Staging".
@@ -203,10 +208,7 @@ Function AscentHUD {
 		set hud_var1 to "Circ: " + padding(Round(CircDV()),2,0,false) + "m/s ".
 		set hud_var2 to "dV: " + padding(Round(StageDV(currentstagenum)),2,0,false) + "m/s ".
 	}
-	if RemainingBurn() > 999 {
-		set hud_fuel to "Fuel: 000s".
-	}
-	
+
 	local hud_printlist is list(hud_met,hud_pitch,hud_stage,hud_staging,hud_var1,hud_var2,hud_twr,hud_apo,hud_fuel,hud_azimuth).
 	local hud_printlocx is list(00,01,29,23,16,29,16,41,41,01).
 	local hud_printlocy is list(04,41,42,40,41,41,42,41,42,42).
@@ -237,26 +239,23 @@ Function scrubGUI {
 	set label1:style:align to "center".
 	set label1:style:hstretch to true. // fill horizontally
 	
-	if runmode = -2 {
-		global continue is gui:addbutton("Continue Countdown").
-		set continue:onclick to {
-			set isDone to true.
-			set proceedMode to 1.
-		}.
-	} else if runmode = -3 {
-		global recycle is gui:addbutton("Recycle Countdown").
-		set recycle:onclick to {
-			set isDone to true.
-			set proceedMode to 2.
-		}.
-	}
+	local continue is gui:addbutton("Continue Countdown").
+	local recycle is gui:addbutton("Recycle Countdown").
 	local scrub is gui:addbutton("Scrub Launch").
+	
+	set continue:onclick to {
+		set isDone to true.
+		set proceedMode to 1.
+	}.
+	set recycle:onclick to {
+		set isDone to true.
+		set proceedMode to 2.
+	}.
 	set scrub:onclick to {
 		set isDone to true.
 		set proceedMode to 3.
 	}.
 	gui:show().
-	
 	wait until isDone.
 	gui:hide().
 	return proceedMode.
