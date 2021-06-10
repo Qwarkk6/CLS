@@ -20,36 +20,25 @@ Tidy Up
 - Included a second parameter with scrollprint function which controls whether to print a timestamp or not.
 - Finally moved away from using ‘steerto’ and ‘throt’ as variables to control steering and throttle (this was originally done in response to a bug in early kOS versions). By locking steering & throttle to a value directly, I could reduce the code length significantly in places. 
 - Added a separate loop to handle the HUD and monitor resources in Abort script. This removed the need to call those functions multiple times throughout the script.
-<br>
-Countdown
-
-- Any hold scenario that occurs during countdown now gives the option to scrub, continue to launch & abort. Originally it did not give the option to continue in some scenarios. This was a mistake, the player should have final say over whether the rocket launches.
+- Removed the ‘vess’ parameter from cls_nav functions. Makes the code look cleaner and I never did find any reason to use the nav functions for any vessel other than the active one.
 - The staging check that occurs during countdown is now a function instead of one line of messy code. This makes it far easier to read, understand and manipulate if necessary.
+- Finally learned how to use BIDMAS to get rid of unnecessary brackets in the formulas.
 <br>
-Nav Function
 
+Bug fixes
 
-<br>
-Fuel Tank
-
-- Big update to how CLS calculates the remaining fuel for upper stages. Previously, CLS found whichever part held the most fuel and presumed this was the only fuel tank for that stage.  Therefore vessels using multiple upper stage fuel tanks gave extremely inaccurate calculations for burn time and deltaV and would not complete the script successfully. 
-- This error is fixed so that it includes fuel tanks with the same resources and assigned the same stage number as the largest tank, and therefore can handle vessels with multiple tank upper stages.
-- A similar error was present for detecting first stage tanks. This has been fixed in the same manner.
-- This system is still not airtight and there may be some circumstances in which it fails. If this is the case, please open a bug report. 
+- Fixed the bug where dV and burn time calculations were inaccurate for vessels with multiple upper stage fuel tanks.
 <br>
 TWR
 
-- Major tidy up of the formulas. Uses local variables to reduce the amount of long & single-lined formulas.
-- Finally learned how to use BIDMAS to get rid of unnecessary brackets in the formulas.
-- Minimum take off TWR has been increased to 1.3. CLS can handle lower TWRs but results are inconsistent and I don’t feel super comfortable releasing the script with default variables which don’t guarantee results.
-- Upper stage TWR has been increased to 0.8 with max TWR increasing to 4. This provides more consistent outcomes across stock, rescaled and planet packs in my experience.
-- The central engine in a 3-booster configuration now throttle down to 55% slightly different. If the rocket can do this and maintain TWR (by increasing overall throttle) it will do so as early as possible. If not, it will do so when the TWR after the throttle down is 2.1. Previously it simply throttled at 2.1 twr regardless. 
+- Overhaul of defualt TWR values (all user configurable). Mininimum take off TWR has been increased to 1.3, Upper stage TWR has been increased to 0.8 and max TWR has increased to 4. These changes were made so that CLS can function across stock and rescaled installs in its default configuration.
+- The central engine in a 3-booster configuration now throttles down to 55% slightly different. If the rocket can do this and maintain TWR (by increasing overall throttle) it will do so as early as possible. If not, it will do so when it can maintain a TWR above 2.1 throughout the throttle down. 
 <br>
-Miscellaneous
+New Features
 
 - CLS now gives two new hud readouts during ascent (experiencing max-q and passed through max-q). The code behind this is lightweight, 'hacky' and may not always show up.
-- Removed the ‘vess’ parameter from cls_nav functions. Makes the code look cleaner and I never did find any reason to use the nav functions for any vessel other than the active one. 
 - The abort script is now activated in response to a manual abort during CLS.
+- Any hold scenario that occurs during countdown now gives the option to scrub, continue to launch & abort. Originally it did not give the option to continue in some scenarios. This was a mistake, the player should have final say over whether the rocket launches.
 <br>
 
 <b>v1.2.1 (07/03/21)</b>
