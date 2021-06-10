@@ -9,7 +9,7 @@ Abort Script
 - The abort script is now activated in response to a manual abort during CLS.
 <br>
 Compatibility
-- The script no longer relies on a pre-set list of fuels and fuel masses which would have to be manually edited by a user wanting to switch to non-stock fuels. Instead the script now automatically determines the fuel type being used and its mass (for dV calculations). This allows CLS to work (theoretically) with any resource pack such as realFuels. 
+- The script no longer relies on a pre-set list of fuels and fuel masses which would have to be manually edited by a user wanting to switch to non-stock fuels. Instead the script now automatically determines the fuel type being used and its mass (for dV calculations). This allows CLS to work (theoretically) with any resource pack such as realFuels.
 - Moved all ‘static’ numbers regarding kerbin & its atmosphere to kOS body variables. This ensures CLS is compatible with rescale mods or planet packs such as RSS.
 - Functions which handle time now calculate the length of a day, rather than presume it is 6 hours as in stock. This is necessary for compatibility with rescale mods or planet packs.
 - The script now determines its geolocation rather than use manually set geo-coordinates of the KSC. This ensures compatibility with rescale mods and planet packs.
