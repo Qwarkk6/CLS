@@ -1,6 +1,11 @@
 Changelog
 ==========================
 
+<b>v1.3.0 (14/06/21)</b>
+
+-
+<br>
+
 <b>v1.2.1 (07/03/21)</b>
 
 - Fixed an error caused when target apoapsis is reached prior to stage seperation, causing an undefined variable to be called.
