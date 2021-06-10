@@ -40,13 +40,13 @@ Minor Changes:
 - Multi-stage vehicles (Not SSTOs) that reach the target apoapsis without staging will now stage at once out of the atmosphere so that upper stages handle circularisation. 
 - Fixed an error in calculating circularisation burn time if the script is waiting to leave the atmopshere before staging (as explained above). Script will now wait until after staging before creating the maneuver node.
 - Removed the throttle down prior to stage seperation. This was in place to limit sudden g-force spikes but interfered with other throttle up/down code in the script.
-
+<br>
 
 <b>v1.0.1 (31/01/21)</b>
 
 - Fixed error in azimuth calculations when handling launches into high apoapsis.
 - Added an abort script (Abort.ks) which automatically runs if CLS detects an abort parameter has been met.
-
+<br>
 
 <b>v1.0.0 (16/01/21)</b>
 
