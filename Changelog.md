@@ -13,16 +13,14 @@ Compatibility
 <br>
 Tidy Up
 
-- General tidy and reformat of a lot of code. Things look tidier, are easier to understand and will hopefully run smoother. 
-- Increased my use of local variables to reduce long, single line equations / calculations.
-- I continuously try to add comments to everything to explain how it works. I do this for my sake, so I can understand it next time I return to it, but also for you to understand how it works and adapt it as you like.
-- Huge rewrite of the scrollprint function to make it concise & run a whole lot smoother.
-- Included a second parameter with scrollprint function which controls whether to print a timestamp or not.
-- Finally moved away from using ‘steerto’ and ‘throt’ as variables to control steering and throttle (this was originally done in response to a bug in early kOS versions). By locking steering & throttle to a value directly, I could reduce the code length significantly in places. 
-- Added a separate loop to handle the HUD and monitor resources in Abort script. This removed the need to call those functions multiple times throughout the script.
-- Removed the ‘vess’ parameter from cls_nav functions. Makes the code look cleaner and I never did find any reason to use the nav functions for any vessel other than the active one.
-- The staging check that occurs during countdown is now a function instead of one line of messy code. This makes it far easier to read, understand and manipulate if necessary.
+- Widespread tidy and reformat of a lot of code. Things look tidier, are easier to understand and will hopefully run smoother. 
+- Increased the use of local variables to reduce long, single line equations / calculations.
 - Finally learned how to use BIDMAS to get rid of unnecessary brackets in the formulas.
+- Rewrite of the scrollprint function to make it concise & run a smoother.
+- Removed ‘steerto’ and ‘throt’ variables for steering and throttle control (this was originally done in response to a bug in early kOS versions).
+- Added a separate loop to handle the HUD and monitor resources in Abort script. This removed the need to call those functions multiple times throughout the script.
+- Removed the ‘vess’ parameter from cls_nav functions.
+- The staging check during countdown is now a function instead of one line of messy code.
 <br>
 
 Bug fixes
