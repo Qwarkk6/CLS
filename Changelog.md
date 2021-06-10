@@ -10,6 +10,7 @@ Compatibility
 - Ensured any calls for the vessel's geolocation will be accurate across rescale mods and planet packs.
 - Reworked part module searches to maximise compatibility with mods that replace stock modules. This was done specifically with realFuels' moduleEnginesRF in mind.
 <br>
+
 Tidy Up
 
 - Widespread tidy and reformat of a lot of code. Things look tidier, are easier to understand and will hopefully run smoother. 
@@ -22,15 +23,12 @@ Tidy Up
 - The staging check during countdown is now a function instead of one line of messy code.
 <br>
 
-Bug fixes
-
-- Fixed the bug where dV and burn time calculations were inaccurate for vessels with multiple upper stage fuel tanks.
-<br>
 TWR
 
 - Overhaul of defualt TWR values (all user configurable). Mininimum take off TWR has been increased to 1.3, Upper stage TWR has been increased to 0.8 and max TWR has increased to 4. These changes were made so that CLS can function across stock and rescaled installs in its default configuration.
 - The central engine in a 3-booster configuration now throttles down to 55% slightly different. If the rocket can do this and maintain TWR (by increasing overall throttle) it will do so as early as possible. If not, it will do so when it can maintain a TWR above 2.1 throughout the throttle down. 
 <br>
+
 New Features
 
 - CLS now gives two new hud readouts during ascent (experiencing max-q and passed through max-q). The code behind this is lightweight, 'hacky' and may not always show up.
@@ -38,11 +36,18 @@ New Features
 - Any hold scenario that occurs during countdown now gives the option to scrub, continue to launch & abort. Originally it did not give the option to continue in some scenarios. This was a mistake, the player should have final say over whether the rocket launches.
 <br>
 
+Bug fixes
+
+- Fixed the bug where dV and burn time calculations were inaccurate for vessels with multiple upper stage fuel tanks.
+______________________
+
+
 <b>v1.2.1 (07/03/21)</b>
 
 - Fixed an error caused when target apoapsis is reached prior to stage seperation, causing an undefined variable to be called.
 - Updated mode detection to better determine if the vessel is using SRBs and adjust its twr calculations accordingly.
-<br>
+______________________
+
 
 <b>v1.2.0 (13/02/21)</b>
 
@@ -77,13 +82,15 @@ Minor Changes:
 - Multi-stage vehicles (Not SSTOs) that reach the target apoapsis without staging will now stage at once out of the atmosphere so that upper stages handle circularisation. 
 - Fixed an error in calculating circularisation burn time if the script is waiting to leave the atmopshere before staging (as explained above). Script will now wait until after staging before creating the maneuver node.
 - Removed the throttle down prior to stage seperation. This was in place to limit sudden g-force spikes but interfered with other throttle up/down code in the script.
-<br>
+
+______________________
 
 <b>v1.0.1 (31/01/21)</b>
 
 - Fixed error in azimuth calculations when handling launches into high apoapsis.
 - Added an abort script (Abort.ks) which automatically runs if CLS detects an abort parameter has been met.
-<br>
+______________________
+
 
 <b>v1.0.0 (16/01/21)</b>
 
