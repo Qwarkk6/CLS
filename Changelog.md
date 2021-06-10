@@ -3,12 +3,6 @@ Changelog
 
 <b>v1.3.0 (14/06/21)</b>
 
-Abort Script
-
-- General tidy up of the script to be easier to read and run smoother.
-- Added a separate loop to handle the HUD and monitor resources. This removed the need to call those functions multiple times throughout the script.
-- The abort script is now activated in response to a manual abort during CLS.
-<br>
 Compatibility
 
 - The script no longer relies on a pre-set list of fuels and fuel masses which would have to be manually edited by a user wanting to switch to non-stock fuels. Instead the script now automatically determines the fuel type being used and its mass (for dV calculations). This allows CLS to work (theoretically) with any resource pack such as realFuels.
@@ -25,6 +19,7 @@ Tidy Up
 - Huge rewrite of the scrollprint function to make it concise & run a whole lot smoother.
 - Included a second parameter with scrollprint function which controls whether to print a timestamp or not.
 - Finally moved away from using ‘steerto’ and ‘throt’ as variables to control steering and throttle (this was originally done in response to a bug in early kOS versions). By locking steering & throttle to a value directly, I could reduce the code length significantly in places. 
+- Added a separate loop to handle the HUD and monitor resources in Abort script. This removed the need to call those functions multiple times throughout the script.
 <br>
 Countdown
 
@@ -33,7 +28,7 @@ Countdown
 <br>
 Nav Function
 
-- Removed the ‘vess’ parameter from nav functions. Makes the code look cleaner and I never did find any reason to use the nav functions for any vessel other than the active one.
+
 <br>
 Fuel Tank
 
@@ -50,10 +45,11 @@ TWR
 - Upper stage TWR has been increased to 0.8 with max TWR increasing to 4. This provides more consistent outcomes across stock, rescaled and planet packs in my experience.
 - The central engine in a 3-booster configuration now throttle down to 55% slightly different. If the rocket can do this and maintain TWR (by increasing overall throttle) it will do so as early as possible. If not, it will do so when the TWR after the throttle down is 2.1. Previously it simply throttled at 2.1 twr regardless. 
 <br>
-HUD
+Miscellaneous
 
-- The way that CLS controls its steering during ascent offered an easy method to detect when the vehicle was approaching max q, without adding too much to the script. Therefore, CLS will now give two readouts during ascent (experiencing max-q and passed through max-q).
-- This code does assume that ship:Q will reach a certain level. If it is not reached for any reason, the max-q readouts will simply not fire.
+- CLS now gives two new hud readouts during ascent (experiencing max-q and passed through max-q). The code behind this is lightweight, 'hacky' and may not always show up.
+- Removed the ‘vess’ parameter from cls_nav functions. Makes the code look cleaner and I never did find any reason to use the nav functions for any vessel other than the active one. 
+- The abort script is now activated in response to a manual abort during CLS.
 <br>
 
 <b>v1.2.1 (07/03/21)</b>
