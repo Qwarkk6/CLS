@@ -6,7 +6,7 @@ Changelog
 -
 <br>
 
-<u><b>v1.2.1 (07/03/21)</b></u>
+<b>v1.2.1 (07/03/21)</b>
 
 - Fixed an error caused when target apoapsis is reached prior to stage seperation, causing an undefined variable to be called.
 - Updated mode detection to better determine if the vessel is using SRBs and adjust its twr calculations accordingly.
