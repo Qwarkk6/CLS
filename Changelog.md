@@ -4,11 +4,13 @@ Changelog
 <b>v1.3.0 (14/06/21)</b>
 
 Abort Script
+
 - General tidy up of the script to be easier to read and run smoother.
 - Added a separate loop to handle the HUD and monitor resources. This removed the need to call those functions multiple times throughout the script.
 - The abort script is now activated in response to a manual abort during CLS.
 <br>
 Compatibility
+
 - The script no longer relies on a pre-set list of fuels and fuel masses which would have to be manually edited by a user wanting to switch to non-stock fuels. Instead the script now automatically determines the fuel type being used and its mass (for dV calculations). This allows CLS to work (theoretically) with any resource pack such as realFuels.
 - Moved all ‘static’ numbers regarding kerbin & its atmosphere to kOS body variables. This ensures CLS is compatible with rescale mods or planet packs such as RSS.
 - Functions which handle time now calculate the length of a day, rather than presume it is 6 hours as in stock. This is necessary for compatibility with rescale mods or planet packs.
@@ -16,6 +18,7 @@ Compatibility
 - Reworked part module searches to maximise compatibility with mods that replace stock modules. Parts were being excluded from part lists due to inconsistent module names across mods (eg realFuels using the moduleEnginesRF module).
 <br>
 Tidy Up
+
 - General tidy and reformat of a lot of code. Things look tidier, are easier to understand and will hopefully run smoother. 
 - Increased my use of local variables to reduce long, single line equations / calculations.
 - I continuously try to add comments to everything to explain how it works. I do this for my sake, so I can understand it next time I return to it, but also for you to understand how it works and adapt it as you like.
@@ -24,19 +27,23 @@ Tidy Up
 - Finally moved away from using ‘steerto’ and ‘throt’ as variables to control steering and throttle (this was originally done in response to a bug in early kOS versions). By locking steering & throttle to a value directly, I could reduce the code length significantly in places. 
 <br>
 Countdown
+
 - Any hold scenario that occurs during countdown now gives the option to scrub, continue to launch & abort. Originally it did not give the option to continue in some scenarios. This was a mistake, the player should have final say over whether the rocket launches.
 - The staging check that occurs during countdown is now a function instead of one line of messy code. This makes it far easier to read, understand and manipulate if necessary.
 <br>
 Nav Function
+
 - Removed the ‘vess’ parameter from nav functions. Makes the code look cleaner and I never did find any reason to use the nav functions for any vessel other than the active one.
 <br>
 Fuel Tank
+
 - Big update to how CLS calculates the remaining fuel for upper stages. Previously, CLS found whichever part held the most fuel and presumed this was the only fuel tank for that stage.  Therefore vessels using multiple upper stage fuel tanks gave extremely inaccurate calculations for burn time and deltaV and would not complete the script successfully. 
 - This error is fixed so that it includes fuel tanks with the same resources and assigned the same stage number as the largest tank, and therefore can handle vessels with multiple tank upper stages.
 - A similar error was present for detecting first stage tanks. This has been fixed in the same manner.
 - This system is still not airtight and there may be some circumstances in which it fails. If this is the case, please open a bug report. 
 <br>
 TWR
+
 - Major tidy up of the formulas. Uses local variables to reduce the amount of long & single-lined formulas.
 - Finally learned how to use BIDMAS to get rid of unnecessary brackets in the formulas.
 - Minimum take off TWR has been increased to 1.3. CLS can handle lower TWRs but results are inconsistent and I don’t feel super comfortable releasing the script with default variables which don’t guarantee results.
