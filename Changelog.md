@@ -1,14 +1,11 @@
 Changelog
 ==========================
 
-<b>v1.0.0 (16/01/21)</b>
+<b>v1.2.1 (07/03/21)</b>
 
-- First public release
+- Fixed an error caused when target apoapsis is reached prior to stage seperation, causing an undefined variable to be called.
+- Updated mode detection to better determine if the vessel is using SRBs and adjust its twr calculations accordingly.
 
-<b>v1.0.1 (31/01/21)</b>
-
-- Fixed error in azimuth calculations when handling launches into high apoapsis.
-- Added an abort script (Abort.ks) which automatically runs if CLS detects an abort parameter has been met.
 
 <b>v1.2.0 (13/02/21)</b>
 
@@ -44,7 +41,13 @@ Minor Changes:
 - Fixed an error in calculating circularisation burn time if the script is waiting to leave the atmopshere before staging (as explained above). Script will now wait until after staging before creating the maneuver node.
 - Removed the throttle down prior to stage seperation. This was in place to limit sudden g-force spikes but interfered with other throttle up/down code in the script.
 
-<b>v1.2.1 (07/03/21)</b>
 
-- Fixed an error caused when target apoapsis is reached prior to stage seperation, causing an undefined variable to be called.
-- Updated mode detection to better determine if the vessel is using SRBs and adjust its twr calculations accordingly.
+<b>v1.0.1 (31/01/21)</b>
+
+- Fixed error in azimuth calculations when handling launches into high apoapsis.
+- Added an abort script (Abort.ks) which automatically runs if CLS detects an abort parameter has been met.
+
+
+<b>v1.0.0 (16/01/21)</b>
+
+- First public release
