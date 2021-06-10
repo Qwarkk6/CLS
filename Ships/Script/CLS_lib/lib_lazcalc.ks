@@ -19,14 +19,14 @@ Function LAZcalc_init {
     Parameter desiredAlt.		 	//Altitude of desired target orbit (in *meters*)
     Parameter desiredInc. 			//Inclination of desired target orbit
 	
-	local autoNodeEpsilon is 10. 		// How many m/s north or south will cause a north/south switch
+    local autoNodeEpsilon is 10. 		// How many m/s north or south will cause a north/south switch
     local launchLatitude is ship:latitude.
-    local data is list().   // A list is used to store information used by LAZcalc
+    local data is list().  			// A list is used to store information used by LAZcalc
     
     //Determines whether we're trying to launch from the ascending or descending node
-	local launchNode is "Ascending".
+    local launchNode is "Ascending".
     if desiredInc < 0 {
-		set launchNode to "Descending".
+	set launchNode to "Descending".
         set desiredInc to abs(desiredInc).       //We'll make it positive for now and convert to southerly heading later
     }
 	
@@ -70,36 +70,4 @@ Function LAZcalc {
 			return azimuth.
 		}
     }
-}
-
-Function IncCorr {
-	Parameter desiredInc.
-	
-	local V_orb is sqrt(body:mu/ (body:radius + ship:altitude)).
-	if ship:velocity:orbit:mag > V_orb {
-		set V_orb to ship:velocity:orbit:mag.
-	}
-	
-	// project desired orbit onto surface heading
-	local az_orb is arcsin ( cos(desiredInc) / cos(ship:latitude)).
-	if (desiredInc < 0) {
-		set az_orb to 180 - az_orb.
-	}
-	
-	// create desired orbit velocity vector
-	local V_star is heading(az_orb, 0)*v(0, 0, V_orb).
-
-	// find horizontal component of current orbital velocity vector
-	local V_ship_h is ship:velocity:orbit - vdot(ship:velocity:orbit, up:vector)*up:vector.
-	
-	// calculate difference between desired orbital vector and current (this is the direction we go)
-	local V_corr is V_star - V_ship_h.
-	
-	// project the velocity correction vector onto north and east directions
-	local vel_n is vdot(V_corr, ship:north:vector).
-	local vel_e is vdot(V_corr, heading(90,0):vector).
-	
-	// calculate compass heading
-	local az_corr is arctan2(vel_e, vel_n).
-	return az_corr.
 }

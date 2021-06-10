@@ -13,10 +13,10 @@ Function logInitialise {
 	local m is (time:minute):tostring().
 	local n is ship:name.
 	local logname is "Y"+y+"."+"D"+d+"_"+h+"."+m+"_"+n.
-	until not exists(path("0:/logs/" + logname + " (" + logcount + ").csv")) {
+	until not exists(path("0:/CLS_lib/logs/" + logname + " (" + logcount + ").csv")) {
 		set logcount to logcount + 1.
 	}
-	global logpath is path("0:/logs/" + logname + " (" + logcount + ").csv").
+	global logpath is path("0:/CLS_lib/logs/" + logname + " (" + logcount + ").csv").
 	global pmt is 0.
 	Log ("Apoapsis,"+(apo/1000)+"km"+" ,Inc,"+round(inc,2)) to logPath.
 	Log (" ") to logPath. 
@@ -31,7 +31,7 @@ function log_data {
 		local logString is "".
 		For data in logData {
 			if (data):typename() = "String" or (data):typename() = "Boolean" {
-				set logString to logString + data + ",".
+				set logString to logString + data + ",".			//Rounds all scaler values to 2 sign numbers
 			} else {
 				set logString to logString + round(data,2) + ",".
 			}

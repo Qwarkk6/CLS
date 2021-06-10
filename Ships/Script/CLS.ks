@@ -31,11 +31,11 @@
 //	 - Lifoff thrust to weight ratio (TWR) must be above 1.2 (this number can be configured in TWR configuration).
 
 // Action groups:
-//   - Place any fairing or LES jettison into action group 10. Will jettison based on atmopshere pressure (usually at 60km altitude).
+//   - Place any fairing or LES jettison into action group 10. Will jettison based on atmopshere pressure.
 //   - Abort action group will be automatically triggered if conditions defined under runmode -666 are met.
 
 // Notes:
-//	 - This script has no dependant mods, however the script checks for parts from the Procedural Fairing mod and can be configured below for non-stock fuels.
+//	 - This script has no dependant mods, however the script checks for parts from the Procedural Fairing mod.
 //   - Variable identifiers which are no longer needed or have not been defined yet are set to "-".
 //	 - Can detect SRBs with thrust curves and will:		a) decouple them when they reach a low trust percentage		b) throttle main engine up to cover thrust losses due to throttle curve
 //	 - If the script progresses far enough to activate any stages, but then the script is terminated (either manually or due to anomaly detection) you will need to 'revert to launchpad' before using the script again in order to reset the stages.
@@ -60,22 +60,11 @@ set csvLog to launchParameters[4].					//false
 //Ascent guidance
 set ascentFactor to 0.7.		//Specifies the altitude at which the gravity turn will end (i.e atmosphere height x 0.65)
 
-// Fuel configuration
-// Change these to configure non-stock fuels. Do not remove CryoFuelName (Even if you are using stock fuels).
-// If you do change them, make sure to change the corresponding fuel mass (you may have to dig in resource config files)
-Set LiquidFuelName to "LiquidFuel".
-Set OxidizerFuelName to "Oxidizer".
-Set CryoFuelName to "LqdHydrogen".
-Set SolidFuelName to "SolidFuel".
-Set OxidizerFuelMass to 0.005.
-Set LiquidFuelMass to 0.005.
-Set CryoFuelMass to 0.00007085.
-
 // TWR configuration
-Set minLiftoffTWR to 1.2.			// Minimum liftoff TWR. Launch will abort just before liftoff if the vehicle attempts to launch with anything lower.
+Set minLiftoffTWR to 1.3.			// Minimum liftoff TWR. Launch will abort just before liftoff if the vehicle attempts to launch with anything lower.
 Set LiftoffTWR to 1.6.				// Liftoff TWR. Engines will be throttled to achieve this TWR at liftoff (if there is sufficient thrust). There are deltaV savings to be had with a higher TWR, 1.6 was best for a 'one size fits all' approach
-Set maxAscentTWR to 3.				// Maximum TWR during ascent. The rocket will throttle down to maintain this when it is reached. There are deltaV savings to be had with a higher TWR, but be careful of vehicle heating.
-Set UpperAscentTWR to 0.7.			// When time to apoapsis is above 90 seconds, the engines will throttle to maintain this TWR.
+Set maxAscentTWR to 4.				// Maximum TWR during ascent. The rocket will throttle down to maintain this when it is reached. There are deltaV savings to be had with a higher TWR, but be careful of vehicle heating.
+Set UpperAscentTWR to 0.8.			// When time to apoapsis is above 90 seconds, the engines will throttle to maintain this TWR.
 
 // Staging delays
 Set stagedelay to 0.5.					// Delay after engine shutdown or previous staging before staging will occur.
@@ -84,6 +73,7 @@ Set throttledelay to 0.5. 				// Delay after stage seperation before engine thro
 // Crew abort check
 // Whether or not to check if there is anything in the abort action group prior to crewed launches. If true, CLS will abort any crewed launch with no abort action groups.
 set crewAbortCheck to true.
+set crewCount to ship:crew():length.
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -117,20 +107,20 @@ runpath("0:/cls_lib/CLS_log.ks").
 If Ship:name:length > 16 { Set Ship:name to "Vehicle". }	// Ensures vehicle name fits on terminal width
 Set logtime to 60.											// Increment between mission log updates
 Set SecondsUntilLaunch to SecToLaunch(SecondsUntilLaunch).	// Checks input for SecondsUntilLaunch parameter and recalculates if necessary
-fueltank(OxidizerFuelName). remainingBurn().				// Run during initialisation for HUD
+Activeenginelist().						 					// Run during initialisation for HUD
+set KarmanReadout to false. set maxQReadout to false. set passQReadout to false.
 
 // Calculates initial launch azimuth
 Set data to LAZcalc_init(targetapoapsis,targetinclination).
 Set launchazimuth to LAZcalc(data).
 
 // Scrolling print list creation
-Set printlist to List(). Set printlisthistory to List(). printlisthistory:add("*").
+Set printlist to List(). Set printlisthistory to List(). printlisthistory:add("*"). set listlinestart to 6.
 
 // Loop variables 
-set throt to 0. Lock throttle to throt.											
 set trajectorypitch to 90.																	// Ensures rocket will initially go vertical.
-set launchroll to rollLock(roll_for(ship)) - heading(launchazimuth,trajectorypitch):roll.	// Rocket will launch so that its 'roll orientation' remains the same from launch to orbit.
-set steerto to heading(launchazimuth,trajectorypitch,launchroll). Lock steering to Steerto.
+set launchroll to rollLock(roll_for()) - heading(launchazimuth,trajectorypitch):roll.	// Rocket will launch so that its 'roll orientation' remains the same from launch to orbit.
+Lock steering to heading(launchazimuth,trajectorypitch,launchroll).
 Set launchtime to Time:seconds + SecondsUntilLaunch.										// Script takes 23 seconds between initialisation and launch
 Set cdownreadout to 0.																		// Countdown function
 Set tminus to 20.																			// Countdown timer
@@ -163,6 +153,7 @@ set circTime to 0.																			// Tracks the time the circularisation burn
 // Date logging
 if csvLog {
 	LogInitialise(targetapoapsis,targetinclination).	//Creates an external csv file with launch data
+	set config:stat to true.
 }
 HUDinit(launchtime,targetapoapsis,targetinclination,csvLog).					// Initiates the HUD information at the top of the terminal.
 
@@ -176,7 +167,7 @@ Until launchcomplete {
 
 	//Log feature - logs data to the csv file created by LogInitialise()
 	if csvLog and missiontime > 0 {
-		log_data(missiontime,LIST(missiontime,mode,StageDV(PayloadProtection),twr(),throt,pitch_for(ship),(ship:q*constant:AtmToKPa),ship:altitude,ship:apoapsis,eta:apoapsis,ship:periapsis,currentstagenum,staginginprogress,runmode,numparts),logPath).
+		log_data(missiontime,LIST(missiontime,mode,StageDV(PayloadProtection),twr(),throttle,pitch_for(),(ship:q*constant:AtmToKPa),ship:altitude,ship:apoapsis,eta:apoapsis,ship:periapsis,currentstagenum,staginginprogress,runmode,numparts),logPath).
 	}
 
 	// Countdown
@@ -186,14 +177,20 @@ Until launchcomplete {
 		Countdown(tminus,cdown).					// Displays the countdown on the terminal
 		
 		if cdown < -20 and tminus >= 20 {
-			print "T" + d_mt(cdown) + "   " at (0,6).	// Will display a countdown if terminal input has set a specific launch time
+			//print "T" + d_mt(cdown) + "   " at (0,currentline).	// Will display a countdown if terminal input has set a specific launch time
+			print "T" + d_mt(cdown) + "   " at (0,(printlist:length)+listlinestart).	// Will display a countdown if terminal input has set a specific launch time
+		}
+		
+		If cdown >= -20 and tminus = 20 {
+			scrollprint("Startup").
+			Set tminus to tminus-1.
 		}
 	
 		// Electric charge check. Holds launch if vehicle has < 40% electric charge
 		If cdown >= -18 and tminus = 18 {
 			If Resourcecheck("Electriccharge",0.4) = false {					// Function for checking resource is above a threshold
 				Set scrubreason to "Insufficient Power". 
-				Set runmode to -3.
+				Set runmode to -2.
 			} else {
 				scrollprint(Ship:name + " is on Internal Power").
 			}
@@ -202,7 +199,8 @@ Until launchcomplete {
 		
 		// Detects presence of SRBs or 3 booster design and changes mode configuration
 		If cdown >= -16 and tminus = 16 {
-			SRBDetect(ship:parts).														// Function for detecting SRBs
+			SRBDetect(ship:parts).
+			SolidFuelDetect().														// Function for detecting SRBs
 			If Ship:partstaggedpattern("^CentralEngine"):length > 0 {
 				Set CentralEngines to true.
 				For engine in Ship:partstaggedpattern("^CentralEngine") {
@@ -215,11 +213,9 @@ Until launchcomplete {
 		
 		// Staging checks. Holds launch if clamps or decouplers are incorrectly staged. See required staging set-up above
 		If cdown >= -14 and tminus = 14 {
-			For P in ship:parts {
-				If mode = 1 and P:hasmodule("launchclamp") and P:stage <> (stage:number-3) or mode = 0 and P:hasmodule("launchclamp") and P:stage <> (stage:number-2) or P:hasmodule("proceduralfairingdecoupler") and P:stage = (stage:number-1) or P:hasmodule("moduledecouple") and P:stage = (stage:number-1){
-					Set scrubreason to "Subnominal Staging Detected". 
-					Set runmode to -3.
-				}
+			if stagingCheck() =  false {
+				Set scrubreason to "Subnominal Staging Detected". 
+				Set runmode to -2.
 			}
 			If runmode = -1 {
 				scrollprint("Staging Checks Complete").
@@ -229,8 +225,9 @@ Until launchcomplete {
 		
 		// Determines main fuel tank and calculates its fuel capacity. Holds launch if this cant be determined. 
 		If cdown >= -12 and tminus = 12 {
-			fueltank(OxidizerFuelName).
-			If plistFuelRem(stagetanks,OxidizerFuelName) = 0 {
+			MainFuelDetect(). MainFuelMass().
+			fueltank(ResourceOne).
+			If plistFuelRem(stagetanks,ResourceOne) = 0 {
 				set runmode to -2.
 				set scrubreason to "MFT Detect Issue".
 			}
@@ -262,18 +259,18 @@ Until launchcomplete {
 		// Checks abort procedures are ready
 		If cdown >= -6 and tminus = 6 {
 			if crewAbortCheck {
-				if ship:crew():length < 1 {
-					scrollprint("$").
+				if crewCount < 1 {
+					scrollPrint("T" + d_mt(cdown),false).
 				} else {
 					if Ship:partsingroup("abort"):length < 1 {
-						Set runmode to -3.
+						Set runmode to -2.
 						Set scrubreason to "Crew Abort Procedure Error".
 					} else {
 						scrollprint("Abort Systems Configured For Launch").
 					}
 				}
 			} else {
-				scrollprint("$").
+				scrollPrint("T" + d_mt(cdown),false).
 			}
 			Set tminus to tminus-1.
 		}
@@ -284,18 +281,19 @@ Until launchcomplete {
 			Activeenginelist().
 			scrollprint("Ignition").
 			Set throttletime to Time:seconds+1.
-			Lock throt to TWRthrottle(LiftoffTWR)*(Time:seconds-throttletime)/2.
+			lock throttle to min(TWRthrottle(LiftoffTWR),TWRthrottle(LiftoffTWR)*(Time:seconds-throttletime)/2).
 			Set tminus to tminus-1.
 		}
 		
 		// Checks engines are producing thrust. Terminates script if they arent.
 		If cdown >= -2 and tminus = 2 {
+			RemainingBurn().
 			if ship:availablethrust > 0.1 {
 				scrollprint("Thrust Verified").
 			} else {
-				set throt to 0.
+				lock throttle to 0.
 				scrollprint("Launch Aborted").
-				scrollprint("Insufficient Thrust").
+				scrollprint("Insufficient Thrust",false).
 				Set launchcomplete to true.
 			}
 			Set tminus to tminus-1.
@@ -304,7 +302,7 @@ Until launchcomplete {
 		// SRB ignition (if SRBs are present). Main engines reach lift-off thrust.
 		If cdown >= -1 and tminus = 1 {
 			if mode = 0 {
-				scrollprint("$").
+				scrollPrint("T" + d_mt(cdown),false).
 			} else {
 				stage.
 				scrollprint("SRB Ignition").
@@ -314,19 +312,21 @@ Until launchcomplete {
 		
 		// Checks vehicle TWR. Will terminate script if its below the threshold configured in TWR configuration. If TWR is ok, the vehicle will liftoff at the TWR configured in TWR configuration (if it has enough thrust).
 		If cdown >= 0 and tminus = 0 {
-			set throt to twrthrottle(LiftoffTWR).
 			If TWR() < minLiftoffTWR {
-				set throt to 0.
+				lock throttle to 0.
 				scrollprint("Launch Aborted").
-				scrollprint("Insufficient Thrust").
+				scrollprint("Insufficient Thrust",false).
 				Set launchcomplete to true.
 			} else {
 				Stage.
 				Set numparts to Ship:parts:length.
-				scrollprint("Liftoff").
+				scrollprint("Liftoff (" + T_O_D(time:seconds) + ")").
 				set launchtwr to twr().							// Records the actual TWR the vehicle achieved at liftoff. Used to calculate the gravity turn later.
-				If mode = 1	{
-					Set launchThrot to throt.					// Records the throttle needed to achieve the launch TWR. Used to throttle engines during ascent.
+				Set launchThrot to TWRthrottle(LiftoffTWR).		// Records the throttle needed to achieve the launch TWR. Used to throttle engines during ascent.
+				If mode = 0 {
+					lock throttle to launchThrot.
+				} else {		
+					lock throttle to max(0.01,min(1,launchThrot + ((partlistavthrust(SRBs)-partlistcurthrust(SRBs))/partlistavthrust(aelist)))).
 				} 
 				Set runmode to 0.
 			}
@@ -335,9 +335,9 @@ Until launchcomplete {
 
 	// Countdown hold for unplanned issues
 	// Holds the countdown and gives you the choice to continue, recycle or abort the launch
-	if runmode = -2 or runmode = -3 {
-		scrollprint("Hold Hold Hold").
-		scrollprint(scrubreason).
+	if runmode = -2 {
+		scrollprint("Hold Hold Hold",false).
+		scrollprint(scrubreason,false).
 		set proceedMode to scrubGUI(scrubreason,runmode).
 		
 		if proceedMode = 1 {
@@ -352,7 +352,7 @@ Until launchcomplete {
 			set launchtime to time:seconds + 23.
 			Print "Target Launch Time: NET " + T_O_D(launchtime) at (0,1).
 		} else if proceedMode = 3 {
-			scrollprint("Launch Scrubbed").
+			scrollprint("Launch Scrubbed",false).
 			set launchcomplete to true.	
 		}
 	}
@@ -365,22 +365,19 @@ Until launchcomplete {
 		
 		//Ship will gradually pitch to 5 degrees which it builds vertical speed
 		set trajectorypitch to 90-(5/(turnVel/ship:verticalspeed)).
-		set steerto to heading(launchazimuth,trajectorypitch,launchroll).
+		lock steering to heading(launchazimuth,trajectorypitch,launchroll).
 		
 		//Start of gravity turn
 		if ship:verticalspeed > turnVel {
 			set runmode to 1.
 			Set turnstart to ship:altitude.
 		}
-		If mode = 1 {
-			set throt to launchThrot + ((partlistavthrust(SRBs)-partlistcurthrust(SRBs))/partlistavthrust(aelist)).			// Throttles engines to compensate for SRB thrust curve
-		}
 	}
 	
 	// One-time actions 
 	If runmode = 1 {	
 		Activeenginelist().
-		set launchroll to launchroll + (launchazimuth - compass_for_vect(ship,east_for(ship))).
+		set launchroll to launchroll + (launchazimuth - compass_for_vect(east_for())).
 		scrollprint("Starting Ascent Trajectory").
 		Set runmode to 2.
 	}
@@ -400,52 +397,55 @@ Until launchcomplete {
 
 		// Staging Pitch control
 		If ImpendingStaging {
-			local pDiff is pitch_for_vect(ship,Ship:srfprograde:forevector) - impStagingPitch.
+			local pDiff is pitch_for_vect(Ship:srfprograde:forevector) - impStagingPitch.
 			local tDiff is time:seconds - impStagingtime.
 			if tDiff < 3 {
 				set trajectorypitch to impStagingPitch + ((pDiff*tDiff)/3).
 			} else {
-				set trajectorypitch to pitch_for_vect(ship,Ship:srfprograde:forevector).
+				set trajectorypitch to pitch_for_vect(Ship:srfprograde:forevector).
 			}
 		} 
 		
 		// Staging Pitch control
 		If staginginprogress { 
-			set trajectorypitch to pitch_for_vect(ship,Ship:srfprograde:forevector).
+			set trajectorypitch to pitch_for_vect(Ship:srfprograde:forevector).
 			set impStagingtime to 0.
 		}
 		
 		//Final steering command
-		set steerto to heading(launchazimuth,trajectorypitch,launchroll).
+		lock steering to heading(launchazimuth,trajectorypitch,launchroll).
 		
 		// Ascent TWR control for first stage
 		If currentstagenum = 1 {
 			If mode = 0 {
 			
 				// Throttle down of main engines so that TWR will not go above threshold set by maxAscentTWR during ascent
-				If TWR() > maxAscentTWR {
-					set throt to TWRthrottle(maxAscentTWR).
+				If TWR() > maxAscentTWR+0.01 {
 					scrollprint("Maintaining TWR").
+					lock throttle to TWRthrottle(maxAscentTWR).
 				}
 				
 				// Gradual throttle down of central engines in 3 booster config. Occurs when the vehicles maximum possible TWR reaches 2.
 				If CentralEngines = true {
-					If maxtwr() > 2 {
+					set postThrust to ((ship:availablethrust/aelist:length)*0.55)+(ship:availablethrust/aelist:length)*(aelist:length-1).			//Finds thrust of one engine * 0.55 (what the center engines throttle to) then adds thrust of other engines																				
+					If (ship:mass*adtg())/postThrust*twr() < 1 or (ship:mass*adtg())/postThrust*2.1 < 1 {											//If vessel can throttle central engine to maintain twr or keep twr above 2.1
 						If CentralEnginesThrottle = false {
+							set currenttwr to min(2.1,twr()).																								//Current twr we aim to maintain through the throttle
 							Set throttletime to Time:seconds.
 							Set CentralEnginesThrottle to true.
 							scrollprint("Throttling Central Engines").
-							Set currentthrottle to throttle.
+							Set currentthrottle to throttle.		
+							set thrott to (ship:mass*adtg())/postThrust*currenttwr.																			//Calculates throttle needed (after throttle) to maintain currenttwr.
 						}
 					}
 					If CentralEnginesThrottle = true {
 						For engine in Ship:partstaggedpattern("^CentralEngine") {
 							If Time:seconds - throttletime < 5 {
 								Set Engine:thrustlimit to ((55 - 100)*((Time:seconds-throttletime)/5)+100).
-								set throt to ((1 - currentthrottle)*((Time:seconds-throttletime)/5)+currentthrottle).
+								lock throttle to (thrott - currentthrottle)*((Time:seconds-throttletime)/5)+currentthrottle.
 							} else {
 								Set Engine:thrustlimit to 55.
-								Set throt to 1.
+								lock throttle to thrott.
 								Set CentralEngines to false.
 							}
 						}								
@@ -453,15 +453,10 @@ Until launchcomplete {
 				}
 			} else {
 						
-				// Throttle up of main engine to account for SRB thrust curve
-				If twr() < maxAscentTWR and not ImpendingStaging {	
-					set throt to launchThrot + ((partlistavthrust(SRBs)-partlistcurthrust(SRBs))/partlistavthrust(aelist)).
-				}
-				
 				// Throttle down of main engines so that TWR will not go above threshold set by maxAscentTWR during ascent
-				If twr() > maxAscentTWR and not ImpendingStaging {
-					set throt to twrthrottle(maxAscentTWR).
+				If twr() > maxAscentTWR+0.01 and not ImpendingStaging {
 					scrollprint("Maintaining TWR").
+					lock throttle to twrthrottle(maxAscentTWR).
 				}
 				
 				// Detection of SRB going below 20% rated thrust. Tells vehicle to stage.
@@ -474,14 +469,12 @@ Until launchcomplete {
 					Set ImpendingStaging to true.
 					if SRBtime = 0 {
 						set SRBtime to time:seconds.
-						set launchThrot to throt.
+						set flameoutThrot to throttle.
 					}
-					if time:seconds-SRBtime < 2 {
-						set throt to launchThrot + ((srbsepthrottle(maxAscentTWR)-launchThrot)*(time:seconds-SRBtime)/2).
-					}
+					lock throttle to min(TWRthrottle(maxAscentTWR),flameoutThrot + ((TWRthrottle(maxAscentTWR)-flameoutThrot)*(Time:seconds-SRBtime)/2)).
 					if impStagingtime = 0 {
 						set impStagingtime to time:seconds.
-						set impStagingPitch to pitch_for_vect(ship,ship:facing:forevector).
+						set impStagingPitch to pitch_for_vect(ship:facing:forevector).
 					}
 				}
 			}
@@ -491,50 +484,43 @@ Until launchcomplete {
 		If currentstagenum > 1 and staginginprogress = false {
 		
 			//Limits upper stage to maxAscentTWR
-			If twr() > maxAscentTWR {
-				set throt to twrthrottle(maxAscentTWR).
+			If twr() > maxAscentTWR+0.01 {
 				scrollprint("Maintaining TWR").
+				lock throttle to twrthrottle(maxAscentTWR).
 			}
 			
-			// Checks whether it has been 5 seconds since staging and time to apoapsis is above 90 seconds before gradually throttling to TWR set by UpperAscentTWR			
-			If Eta:apoapsis > 90 and broke90 = false and (Time:seconds - stagefinishtime) >= 5 {
+			// Checks whether it has been 5 seconds since staging and time to apoapsis is above 120 seconds and second stage has boosted eta:apoapsis by 30 seconds since sep before gradually throttling to TWR set by UpperAscentTWR			
+			If Eta:apoapsis > ApoETA and eta:apoapsis > 120 and broke90 = false and (Time:seconds - stagefinishtime) >= 5 {
 				Set broke90 to true.
 				Set throttletime to Time:seconds.
 				Set currentthrottle to throttle.
+				scrollprint("Throttling Down").
 			}
 			If broke90 = true and apoapsis975 = false {
-				If TWR() > UpperAscentTWR {
-					If Time:seconds - throttletime < 5 {
-						set throt to ((TWRthrottle(UpperAscentTWR) - currentthrottle)*((Time:seconds-throttletime)/5)+currentthrottle).
-					} else {
-						set throt to TWRthrottle(UpperAscentTWR).
-					}
-					scrollprint("Throttling Down").
+				If TWR() > UpperAscentTWR+0.01 {
+					lock throttle to max(TWRthrottle(UpperAscentTWR),((TWRthrottle(UpperAscentTWR) - currentthrottle)*((Time:seconds-throttletime)/5)+currentthrottle)).
 				}
 			}
 			
-			// If time to apoapsis drops below 45 seconds after engines have throttled down, this will throttle them back up
-			If broke90 = true and Eta:apoapsis < 45 {
+			// If time to apoapsis drops below 75 seconds after engines have throttled down, this will throttle them back up
+			If broke90 = true and Eta:apoapsis < 75 {
 				Set broke90 to false.
-				set throt to TWRthrottle(maxAscentTWR).
+				lock throttle to TWRthrottle(maxAscentTWR).
 			}
 		}
 		
 		//Throttles to 0.1 for fine tuning final apoapsis
 		If ship:apoapsis >= (targetapoapsis-4000) and apoapsis975 = false and not staginginprogress {
+			//lock throttle to TWRthrottle(UpperAscentTWR).
 			Set apoapsis975 to true.
 			Set throttletime to Time:seconds.
 			Set currentthrottle to throttle.
+			scrollprint("Throttling Down").
 		}
 		if apoapsis975 = true and not staginginprogress {
 			Set warp to 0.
-			If TWR() > 0.1 {							// Throttles down to 0.1 TWR when <5% away from target apoapsis to ensure accuracy of parking orbit
-				If Time:seconds - throttletime < 2 {
-					set throt to ((TWRthrottle(0.1) - currentthrottle)*((Time:seconds-throttletime)/2)+currentthrottle).
-				} else {
-					set throt to TWRthrottle(0.1).
-				}
-				scrollprint("Throttling Down").
+			If TWR() > 0.11 {							// Throttles down to 0.1 TWR when <5% away from target apoapsis to ensure accuracy of parking orbit
+				lock throttle to max(TWRthrottle(0.1),(TWRthrottle(0.1) - currentthrottle)*((Time:seconds-throttletime)/1)+currentthrottle).
 			}
 		}
 		
@@ -543,28 +529,29 @@ Until launchcomplete {
 			Set ImpendingStaging to true.
 			if impStagingtime = 0 {
 				set impStagingtime to time:seconds.
-				set impStagingPitch to pitch_for_vect(ship,ship:facing:forevector).
+				set impStagingPitch to pitch_for_vect(ship:facing:forevector).
 			}
 		}
 		
 		//End of ascent
 		if ship:apoapsis >= (targetapoapsis-250) {
-			if throt > 0 {
+			if throttle > 0 {
 				scrollprint(enginereadout(currentstagenum) + " Cut-Off ").
-				scrollprint("          Parking Orbit Confirmed").
+				scrollprint("          Parking Orbit Confirmed",false).
+				scrollprint("          Entering Coast Phase",false).
 			} else {
 				scrollprint("Parking Orbit Confirmed").
 			}
-			set throt to 0.
+			lock throttle to 0.
 			set runmode to 3.
 		}
 		
 		// This detects if the vehicle wont have enough deltaV to circularise if it raises its apoapsis any further. Cuts the burn short and will circularise at current apoapsis.
-		if ship:apoapsis > body:atm:height*1.05 and currentstagenum = MaxStages and (Time:seconds - stagefinishtime) >= 5 {
-			if CircDV() >= (StageDV(PayloadProtection)*0.975) {
+		if ship:apoapsis > body:atm:height*1.05 and currentstagenum = MaxStages and (Time:seconds - stagefinishtime) >= 15 {
+			if CircDV() >= (StageDV(PayloadProtection)*0.95) {
 				scrollprint(enginereadout(currentstagenum) + " Cut-Off ").
-				scrollprint("Insufficient dV detected").
-				set throt to 0.
+				scrollprint("          Insufficient dV detected",false).
+				lock throttle to 0.
 				Set runmode to 3.
 			}
 		}
@@ -583,6 +570,7 @@ Until launchcomplete {
 			set burnStartTime to time:seconds + cnode:eta - nodeBurnStart(cnode).
 			set burntime to nodeBurnTime().
 			set burnstart to false.
+			set burnsteer to false.
 			set dv0 to cnode:deltav.
 		}
 		if hasnode {
@@ -603,8 +591,7 @@ Until launchcomplete {
 	
 	// Coast phase
 	If runmode = 4 {
-		set steerto to Ship:prograde:forevector.
-		scrollprint("          Entering Coast Phase").
+		lock steering to Ship:prograde:forevector.
 		if ship:altitude > body:atm:height {
 			if currentstagenum > 1 {
 				if nodecheck = false {
@@ -615,8 +602,8 @@ Until launchcomplete {
 				} else if hasnode {
 					if time:seconds >= burnStartTime-90 {			// Will take the vehicle out of warp (and prevent further warping) 90 seconds before the circularisation burn is due to start
 						scrollprint("Preparing for Circularisation Burn").
-						scrollprint("          Delta-v requirement: " + ceiling(cnode:deltav:mag,2) + "m/s").
-						scrollprint("          Burn time: " + d_mt(burntime)).
+						scrollprint("          Delta-v requirement: " + ceiling(cnode:deltav:mag,2) + "m/s",false).
+						scrollprint("          Burn time: " + d_mt(burntime),false).
 						rcs on.
 						set runmode to 5.
 					}
@@ -630,30 +617,34 @@ Until launchcomplete {
 	
 	// Circularisation burn
 	if runmode = 5 {
-		set steerto to cnode:burnvector.
+		lock steering to cnode:burnvector.
 		if time:seconds >= burnStartTime and burnstart = false {
 			if ship:availablethrust > 0.1 {
 				set burnstart to true.
-				set throt to 1.
+				lock throttle to 1.
 				scrollprint(enginereadout(currentstagenum) + " Ignition").
 			}
 		}
-		if time:seconds >= burnStartTime-5 and vang(steerto,ship:facing:vector) > 5 and burnstart = false {
+		if vang(steering,ship:facing:vector) < 5 {
+			set burnsteer to true. 
+		}
+		if time:seconds >= burnStartTime-5 and burnsteer = false and burnstart = false {
 			scrollprint("Correcting attitude with Thrust gimbal").
-			set throt to 0.1.
+			lock throttle to 0.1.
+			set burnsteer to true.
 		}
 
 		// Handles throttle and burn end
 		if burnstart = true {
 			set max_acc to ship:availablethrust/ship:mass.			// continuous calculation of max acceleration as it changes as fuel is burned
-			set throt to min(cnode:deltav:mag/max_acc,1).			// This will throttle the engine down when there is less than 1 second remaining in the burn
+			lock throttle to min(cnode:deltav:mag/max_acc,1).			// This will throttle the engine down when there is less than 1 second remaining in the burn
 			
 			// When remaining deltaV is low, detects when node vector drifts significantly or faces the opposite direction, showing the burn is finished
 			if cnode:deltav:mag < 0.1 or vdot(dv0,cnode:deltav) < 0 {
 				if vdot(dv0,cnode:deltav) < 0.5 {
-					set throt to 0.
+					lock throttle to 0.
 					scrollprint(enginereadout(currentstagenum) + " Cut-Off").
-					scrollprint("          Orbit Cicularised").
+					scrollprint("          Orbit Cicularised",false).
 					Set runmode to 6.
 					set circTime to time:seconds.
 				}
@@ -663,7 +654,7 @@ Until launchcomplete {
 	
 	// Triggers program end
 	If runmode = 6 {
-		set steerto to Ship:prograde:forevector.
+		lock steering to Ship:prograde:forevector.
 		if time:seconds - circTime > 10 {
 			remove cnode.
 			Set launchcomplete to true.
@@ -672,7 +663,7 @@ Until launchcomplete {
 
 	// Perform abort if conditions defined in Continuous abort detection logic (below) are met and terminates script
 	If runmode = -666 {
-		set throt to 0.
+		lock throttle to 0.
 		Set Ship:control:neutralize to true. 
 		sas on.
 		scrollprint("Launch Aborted").
@@ -736,10 +727,8 @@ Until launchcomplete {
 					If ship:availablethrust < 0.1 or EngstagingOverride {
 						Set stagetime to Time:seconds+stagedelay.
 						Set stagesep to false.
-						if EngstagingOverride {
-							set throt to 0.
-						} else {
-							set throt to 0.
+						lock throttle to 0.
+						if not EngstagingOverride {
 							scrollprint(enginereadout(currentstagenum) + " Cut-Off").
 						}
 						Break.	
@@ -751,7 +740,7 @@ Until launchcomplete {
 		// Booster or external tank staging (after specified delay)
 		If Time:seconds >= booststagetime {
 			Stage.
-			FuelTank(OxidizerFuelName).
+			FuelTank(ResourceOne).
 			Activeenginelist().
 			Set numparts to Ship:parts:length.
 			Set booststagetime to Time:seconds+100000.
@@ -766,8 +755,12 @@ Until launchcomplete {
 			} else {
 				scrollprint("SRB Jettison").
 				SRBDetect(ship:parts).
+				SolidFuelDetect().
 			}
-			Set throt to TWRthrottle(maxAscentTWR).
+			lock throttle to TWRthrottle(maxAscentTWR+0.01).
+			if TWRthrottle(maxAscentTWR+0.01) < 1 {
+				scrollprint("Maintaining TWR").
+			}
 			set staginginprogress to false.
 			set SRBstagingOverride to false.
 			rcs off.
@@ -802,37 +795,25 @@ Until launchcomplete {
 					Set stagetime to Time:seconds+0.01.
 					Set throttledelay to throttledelay-0.01.
 				}
-				else If Ship:availablethrust >= 0.01 and ((Time:seconds-stagetime)-throttledelay) < 3 {
+				//else If Ship:availablethrust >= 0.01 and ((Time:seconds-stagetime)-throttledelay) < 3 {
+				else If Ship:availablethrust >= 0.01 {
+					Set staginginprogress to false.
+					Set EngstagingOverride to false.
+					Set stagefinishtime to Time:seconds.
+					set ApoETA to eta:apoapsis+30.
+					rcs off.
+					MainFuelDetect(). MainFuelMass().
+					FuelTankUpper(ResourceOne).
+					Set stagetime to Time:seconds+100000.
 					if runmode = 2 {
 						scrollprint("Stage "+currentstagenum+" Ignition").
 						if apoapsis975 {
-							set throt to (TWRthrottle(0.1)*((Time:seconds-stagetime)-throttledelay)/3).
+							lock throttle to min(TWRthrottle(0.1),(TWRthrottle(0.1)*((Time:seconds-stagefinishtime)-throttledelay)/3)).
 						} else {
-							set throt to (TWRthrottle(maxAscentTWR)*((Time:seconds-stagetime)-throttledelay)/3).
+							lock throttle to min(TWRthrottle(maxAscentTWR),(TWRthrottle(maxAscentTWR)*((Time:seconds-stagefinishtime)-throttledelay)/3)).
 						}
 					} else {
-						set throt to 0.
-					}
-					if ((Time:seconds-stagetime)-throttledelay) > 0.75 {
-						Set staginginprogress to false.
-						Set EngstagingOverride to false.
-						Set stagefinishtime to Time:seconds.
-						rcs off.
-						FuelTankUpper(OxidizerFuelName).
-						Activeenginelist().
-					}
-				}
-				// Caps throttle to maxAscentTWR, is reduced to 0.7 in upper atmopshere
-				else If Ship:availablethrust >= 0.01 and ((Time:seconds-stagetime)-throttledelay) >= 3 {
-					Set stagetime to Time:seconds+100000.
-					if runmode = 2{
-						if apoapsis975 {
-							set throt to TWRthrottle(0.1).
-						} else {						
-							set throt to TWRthrottle(maxAscentTWR).
-						}	
-					} else {
-						set throt to 0.
+						lock throttle to 0.
 					}
 				}
 			}
@@ -862,6 +843,13 @@ Until launchcomplete {
 			scrollprint("Insufficient Internal Power").
 		}
 	}
+	
+	//If manual abort is triggered
+	if ABORT = true {
+		Set runmode to -666.
+		scrollprint("Manual Abort").
+	}
+	
 wait 0.001.
 }
 
@@ -874,6 +862,10 @@ If launchcomplete {
 	If runmode = 6 {
 		scrollprint("Program Completed").
 		Remove cnode.
+	}
+	if csvLog = true {
+		log profileresult() to logPath.
+		set config:stat to false.
 	}
 	Print "                                              " at (0,0).
 } 

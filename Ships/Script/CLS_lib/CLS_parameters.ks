@@ -11,9 +11,10 @@ Function launchParam {
 	local gui is gui(350).
 	local fInput is list().
 	local inputError is false.
-	local latitude is -0.0972601544390867.
 	local warning is false.
 	local warningCount is 0.
+	global maxApo is body:atm:height*7.
+	global launchLoc is ship:geoposition.							// Records liftoff geo-location for downrange distance calc
 	
 	//Title
 	local Title is gui:addLabel("CLS Parameters").
@@ -36,7 +37,7 @@ Function launchParam {
 	//Hidden Apoapsis Input
 	local lineh1 is gui:ADDHLAYOUT().
 	local tApoLabel2 is lineh1:addLabel("Apoapsis Input (km)").
-	local tApoInput is lineh1:addtextfield("200").
+	local tApoInput is lineh1:addtextfield("250").
 	set tApoInput:style:width to 40.
 	lineh1:hide().
 	
@@ -144,11 +145,11 @@ Function launchParam {
 			if tApoButton1:pressed {
 				lineh1:show().
 				if tApoInput:text:length > 0 {
-					global tApo is (tApoInput:text:tonumber()*1000).
+					global tApo is tApoInput:text:tonumber()*1000.
 				}
 			} else {
 				lineh1:hide().
-				global tApo is 500000.
+				global tApo is maxApo.
 			}
 			
 			//Inclination
@@ -207,24 +208,24 @@ Function launchParam {
 		}
 		//Warnings
 		//Apoapsis Warning
-		if tApoButton1:pressed and tApo <= 100000 {
+		if tApoButton1:pressed and tApo <= body:atm:height*1.5 {
 			set warning to true.
-			set warn2:text to "Target apoapsis is below 100km. Results may vary.".
+			set warn2:text to "Target apoapsis is below recommended altitude. Results may vary.".
 		} 
 		
 		//Error Checking
 		//Apoapsis 
 		if tApoButton1:pressed {
-			if tApo < 70000 {
+			if tApo < body:atm:height {
 				set inputError to true.
-				set Error2:text to "Target apoapsis is below the atmosphere (70km)".
-			} else if tApo > 500000 {
+				set Error2:text to "Target apoapsis is below the atmosphere".
+			} else if tApo > maxApo {
 				set inputError to true.
 				set Error2:text to "Target apoapsis is above the maximum rating for CLS".
 			}
 		} 
 		//Inclination
-		if ABS(tInc) < Floor(ABS(latitude)) or ABS(tInc) > (180 - Ceiling(ABS(latitude))) {
+		if ABS(tInc) < Floor(ABS(launchLoc:lat)) or ABS(tInc) > 180 - Ceiling(ABS(launchLoc:lat)) {
 			set inputError to true.
 			set Error2:text to "Target Inclination impossible to achieve".
 		}

@@ -10,21 +10,15 @@
 
 //Finds east 
 function east_for {
-  parameter ves.
-
-  return vcrs(ves:up:vector, ves:north:vector).
+  return vcrs(ship:up:vector, ship:north:vector).
 }
 
 //Finds current compass heading 
 function compass_for {
-  parameter ves.
-
-  local pointing is ves:facing:forevector.
-  local east is east_for(ves).
-
-  local trig_x is vdot(ves:north:vector, pointing).
+  local pointing is ship:facing:forevector.
+  local east is east_for().
+  local trig_x is vdot(ship:north:vector, pointing).
   local trig_y is vdot(east, pointing).
-
   local result is arctan2(trig_y, trig_x).
 
   if result < 0 { 
@@ -36,19 +30,15 @@ function compass_for {
 
 //Finds current pitch
 function pitch_for {
-  parameter ves.
-
-  return 90 - vang(ves:up:vector, ves:facing:forevector).
+  return 90 - vang(ship:up:vector, ship:facing:forevector).
 }
 
 //Finds current roll
 function roll_for {
-	parameter ves.
-
-	local raw is ves:facing:roll.
-	if raw > 360 {
-		return raw-360.
+	local r is ship:facing:roll.
+	if r > 360 {
+		return r-360.
 	} else {
-		return raw.
+		return r.
 	}
 }
