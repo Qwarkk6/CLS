@@ -5,9 +5,8 @@ Changelog
 
 Compatibility
 
-- The script no longer relies on a pre-set list of fuels and fuel masses which would have to be manually edited by a user wanting to switch to non-stock fuels. Instead the script now automatically determines the fuel type being used and its mass (for dV calculations). This allows CLS to work (theoretically) with any resource pack such as realFuels.
-- Moved all ‘static’ numbers regarding kerbin & its atmosphere to kOS body variables. This ensures CLS is compatible with rescale mods or planet packs such as RSS.
-- Functions which handle time now calculate the length of a day, rather than presume it is 6 hours as in stock. This is necessary for compatibility with rescale mods or planet packs.
+- CLS can now automatically determine the fuel type and mass, even for non-stock resources. This allows CLS to work (theoretically) with any resource pack such as realFuels.
+- Ensured CLS is compatible with all rescale mods and planet packs by altering how it handles atmospheric calculations, gelocation and time variables
 - Ensured any calls for the vessel's geolocation will be accurate across rescale mods and planet packs.
 - Reworked part module searches to maximise compatibility with mods that replace stock modules. This was done specifically with realFuels' moduleEnginesRF in mind.
 <br>
