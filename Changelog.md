@@ -51,6 +51,7 @@ TWR
 - The central engine in a 3-booster configuration now throttle down to 55% slightly different. If the rocket can do this and maintain TWR (by increasing overall throttle) it will do so as early as possible. If not, it will do so when the TWR after the throttle down is 2.1. Previously it simply throttled at 2.1 twr regardless. 
 <br>
 HUD
+
 - The way that CLS controls its steering during ascent offered an easy method to detect when the vehicle was approaching max q, without adding too much to the script. Therefore, CLS will now give two readouts during ascent (experiencing max-q and passed through max-q).
 - This code does assume that ship:Q will reach a certain level. If it is not reached for any reason, the max-q readouts will simply not fire.
 <br>
