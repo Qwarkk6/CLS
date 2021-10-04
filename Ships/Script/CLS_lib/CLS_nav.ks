@@ -46,27 +46,6 @@ function compass_for_vect {
 
 // Calculates pitch for ascent
 // Credit to TheGreatFez for this function. I have modified it slightly to limit angle of attack during high dynamic pressure
-function PitchProgram_Sqrt2 {
-	parameter switch_alt is 0.
-	parameter scale_factor is 0.7.
-	parameter stageNumber is 1.
-	local turnend is body:atm:height*1.786.
-	local alt is ship:altitude-switch_alt.
-	local maxQsteer is max(0,10-ship:q*15).
-	local pitch_max is pitch_for_vect(Ship:srfprograde:forevector)+maxQsteer.
-	local pitch_min is pitch_for_vect(Ship:srfprograde:forevector)-maxQsteer.
-	local alt_diff is scale_factor*(turnend-switch_alt).
-	
-	if ship:altitude >= switch_alt {
-		if stageNumber > 1 {
-			global pitch_ang is 90 - max(0 ,min(85,90*sqrt(alt/alt_diff))).
-		} else {
-			global pitch_ang is 90 - max(5,min(85,90*sqrt(alt/alt_diff))).
-		}
-	}
-	return max(min(pitch_ang,pitch_max),pitch_min).
-}
-
 function PitchProgram_Sqrt {
 	parameter stageNumber is 1.
 	local turnend is body:atm:height*1.75.
