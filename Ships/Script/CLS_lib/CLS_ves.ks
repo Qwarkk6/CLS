@@ -31,7 +31,6 @@ Function stagingCheck {
 			//If there is a part in the next stage that isnt an engine
 			if p:stage >= (stage:number-1) and not P:modules:join(","):contains("ModuleEngine") {
 				set x to false.
-				print "1" at (0,25).
 			}
 		} 
 	}
