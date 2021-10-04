@@ -44,7 +44,7 @@ Function twrthrottle {
 	return Max(0.01,Min(1,twrThrot)).
 }
 	
-// calculates post SRB seperation throttle required to achieve a given TWR
+// calculates post SRB separation throttle required to achieve a given TWR
 Function srbsepthrottle {
 	parameter targetTWR.
 	local g is adtg().

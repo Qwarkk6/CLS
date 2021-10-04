@@ -74,16 +74,40 @@ Function remainingBurnSRB {
 }
 
 // calculates dV required to circularise at current apoapsis
-Function circDV {
+Function circDVApo {
 	local v1 is (ship:body:mu * (2/(ship:apoapsis + ship:body:radius) - 2/(ship:apoapsis + ship:periapsis + 2*ship:body:radius)))^0.5.
 	local v2 is (ship:body:mu * (2/(ship:apoapsis + ship:body:radius) - 2/(2*ship:apoapsis + 2*ship:body:radius)))^0.5.
+	return ABS(v2-v1).
+}
+
+// calculates dV required to circularise at current Periapsis
+Function circDVPeri {
+	local v1 is (ship:body:mu * (2/(ship:periapsis + ship:body:radius) - 2/(ship:apoapsis + ship:periapsis + 2*ship:body:radius)))^0.5.
+	local v2 is (ship:body:mu * (2/(ship:periapsis + ship:body:radius) - 2/(2*ship:periapsis + 2*ship:body:radius)))^0.5.
 	return v2-v1.
+}
+
+// calculates dV required to circularise at a periapsis of the target orbit
+Function circDVTargetPeri {
+	Parameter targetOrbit is 250000.
+	local v1 is (ship:body:mu * (2/(targetOrbit + ship:body:radius) - 2/(ship:apoapsis + targetOrbit + 2*ship:body:radius)))^0.5.
+	local v2 is (ship:body:mu * (2/(targetOrbit + ship:body:radius) - 2/(2*targetOrbit + 2*ship:body:radius)))^0.5.
+	return ABS(v2-v1).
+}
+
+// calculates dV required at Apo to bring Peri to a target orbit
+Function BurnDv {
+	Parameter targetOrbit is 250000.
+	local v1 is (ship:body:mu * (2/(ship:apoapsis + ship:body:radius) - 2/(ship:apoapsis + ship:periapsis + 2*ship:body:radius)))^0.5.
+	local v2 is (ship:body:mu * (2/(ship:apoapsis + ship:body:radius) - 2/(targetOrbit+ship:apoapsis + 2*ship:body:radius)))^0.5.
+	return ABS(v2-v1).
 }
 
 // calculates burn time for the next manuever node. ActiveEngines() needs to be run prior
 Function nodeBurnTime {
+	Parameter node is nextnode.
 	Activeenginelist().
-	local dV is nextnode:deltav:mag.
+	local dV is node:deltav:mag.
 	local f is ship:availablethrust.
 	local m is ship:mass.
 	local e is constant:e.

@@ -187,7 +187,7 @@ Function countdown {
 // Identifies / Calculates data to be displayed on the terminal HUD.
 Function AscentHUD {
 	
-	local hud_met is "Mission Elapsed Time: " + "T" + D_MT(missiontime).
+	local hud_met is "Mission Elapsed Time: " + "T" + D_MT(missiontime) + " (" + runmode + ") ".
 	local hud_pitch is "Pitch: " + padding(Round(trajectorypitch,1),2,1,false) + "°".
 	local hud_stage is "Stage: " + currentstagenum + "/" + MaxStages.
 	local hud_staging is "-------".								
@@ -213,7 +213,11 @@ Function AscentHUD {
 		set hud_staging to "Staging".
 	} 
 	if ship:apoapsis > body:atm:height and currentstagenum > 1 and (Time:seconds - stagefinishtime) >= 5 {
-		set hud_var1 to "Circ: " + padding(Round(CircDV()),2,0,false) + "m/s ".
+		if LEO = true {
+			set hud_var1 to "Circ: " + padding(Round(ABS(CircDVTargetPeri(targetapoapsis))),2,0,false) + "m/s ".
+		} else {
+			set hud_var1 to "Circ: " + padding(Round(CircDVApo()),2,0,false) + "m/s ".
+		}
 		set hud_var2 to "dV: " + padding(Round(StageDV(PayloadProtection)),2,0,false) + "m/s ".
 	}
 

@@ -7,7 +7,13 @@
 //Checks for common errors in staging
 Function stagingCheck {
 	local x is true.
+	local plist is list().
 	For P in ship:parts {
+		if not P:hasmodule("MuMechModuleHullCameraZoom") {
+			plist:add(p).
+		}
+	}
+	For P in plist {
 		If mode = 1 {
 			//If launch clamps arent in the correct stage
 			if P:hasmodule("launchclamp") and P:stage <> (stage:number-3) {
@@ -25,6 +31,7 @@ Function stagingCheck {
 			//If there is a part in the next stage that isnt an engine
 			if p:stage >= (stage:number-1) and not P:modules:join(","):contains("ModuleEngine") {
 				set x to false.
+				print "1" at (0,25).
 			}
 		} 
 	}
@@ -62,6 +69,22 @@ Function SRBDetect {
 		set mode to 1.
 	} else {
 		set mode to 0.
+	}
+}
+
+//Creates a list of fuel cells
+Function FCDetect {
+	local resConvert is list().
+	global FCList is list().
+	For p in ship:parts {
+		if p:hasmodule("ModuleResourceConverter") {
+			resConvert:add(p).
+		}
+	}
+	For p in resConvert {
+		if p:getmodule("ModuleResourceConverter"):allevents:join(","):contains("start fuel cell") {
+			FCList:add(p).
+		}
 	}
 }
 
