@@ -1,6 +1,37 @@
 Changelog
 ==========================
 
+<b>v1.4.0 (04/10/21)</b>
+
+Abort
+
+- The abort procedure included in v1.3.0 relied upon another script (ChuteDescent.ks) which I completely forgot to upload. Apologies!
+- ChuteDescent handles chute deploy on the aborted capsules descent. I split it into it's own script as it can also be used for a capsule re-entering the atmosphere.
+<br>
+
+Minor Changes
+
+- I use the HullCam mod, and CLS now has a system of excluding hullcam parts from its staging checks and part counts.
+- CLS can now detect the presence of fuel cells on the vehicle and will activate it if EC is below 25%.
+- I can't spell separation/separated/separate it seems. Corrected the spelling (thank you jefferyharrell)
+- Added a readout to show with runmode the script is in. It shows next to the Mission Elapsed Time on the HUD.
+- Added a check to confirm engines are throttling correctly at T-0. I found that the script was aborting some launches when it didn't need to due to throttle 'lag'.
+- The ship will hold pitch a for a few seconds after staging to ensure the next stage is totally clear of the previous stage before pitching.
+- Staging will now occur when SRBs are below 25% thrust, not 20% (for SRBs with thrust curves).
+<br>
+
+Achieving Orbit
+
+- This is a major change and the code to implement this system is spread all through CLS and its libraries - I will summarise what it does below.
+- Previous versions of CLS were very basic in that the vehicle would burn until apoapsis reached a target orbit altitude, cut-off its engines and then burn at apoapsis to circularise the orbit. This presented issues with low orbit altitudes just outside the karman line or situations where it left the upper stages with unrealistic circularisation burns.
+- Now, the script has multiple methods of circularising:
+    1. As before, circularising at apoapsis.
+    2. First burn is longer and cuts when periapsis reaches the target orbit altitude. Then at periapsis, the vehicle burns retrograde to achieve a circular orbit.
+    3. Same approach as number 2, but the script sees the apoapsis is getting extremely large, so it cuts the engine, burns at apoapsis to raise the periapsis to target orbit, and then burns retrograde at periapsis to circualrise the orbit.
+- The script continuously monitors multiple data streams to determine which approach is best.
+- This is most definitely a beta feature. I need to do hours of testing before I'm happy with it and there will be tweaks made to the code along the way - any feedback about it would be much appreciated.
+<br>
+
 <b>v1.3.0 (10/06/21)</b>
 
 Compatibility
