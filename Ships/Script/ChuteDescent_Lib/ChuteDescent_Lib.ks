@@ -10,7 +10,7 @@ function ReentryHUD {
 	Print "------------------" at (0,7).
 	Print "Altitude: " + padding(alt:radar,4,1,false) + "m   " at (0,8).
 	Print "Descent Time: " + padding(dt,3,1,false) + "s   " at (0,9).
-	if addons:tr:HASIMPACT {
+	if addons:tr:hasimpact {
 		Print "Remaining Time: " + padding(addons:tr:timetillimpact,3,1,false) + "s        " at (0,10).
 	} else {
 		Print "Remaining Time: Calcualting...     " at (0,10).
