@@ -18,20 +18,19 @@ Function stageDV {
 	// effective ISP
 	local avgIsp is 0.
 	local avT is ship:availablethrust+0.001.
-	activeEngineList().
+	//activeEngineList().
 	for e in aelist {
 		local t is e:availablethrust+0.001.
 		set avgIsp to avgIsp + t / avT * e:vacuumisp.
 	}
-	return avgIsp*constant:g0*ln(m / (m-fuelmass)).
+	return (avgIsp*constant:g0*ln(m / (m-fuelmass)))-1.
 }
 
 // calulates remaining burn time for current fuel load
 Function remainingBurn {
 	local fuel is plistFuelRem(stagetanks,ResourceOne)+plistFuelRem(stagetanks,ResourceTwo).
-	activeEngineList().
+	//activeEngineList().
 	local ff is 0.01.
-	//local idx is -1.
 	local fflist is aelist:copy().
 	
 	If Ship:partstaggedpattern("^CentralEngine"):length > 0 {
@@ -41,15 +40,20 @@ Function remainingBurn {
 			}
 		}
 		fflist:remove(idx).
-		//if idx > -1 {
-		//	fflist:remove(idx).
-		//}
 		For e in fflist {
-			set ff to ff+e:fuelflow.
+			if e:fuelflow = 0 {
+				set ff to ff+e:maxfuelflow.
+			} else {
+				set ff to ff+e:fuelflow.
+			}
 		}
 	} else {
 		For e in aelist {
-			set ff to ff+e:fuelflow.
+			if e:fuelflow = 0 {
+				set ff to ff+e:maxfuelflow.
+			} else {
+				set ff to ff+e:fuelflow.
+			}
 		}
 	}
 	return fuel/ff.
@@ -57,7 +61,7 @@ Function remainingBurn {
 
 // calulates remaining burn time for current fuel load
 Function remainingBurnSRB {
-	activeSRBlist().
+	//activeSRBlist().
 	local fuelrem is 0.01.
 	local ff is 0.01.
 	For tank in asrblist {
@@ -106,7 +110,7 @@ Function BurnDv {
 // calculates burn time for the next manuever node. ActiveEngines() needs to be run prior
 Function nodeBurnTime {
 	Parameter node is nextnode.
-	Activeenginelist().
+	//Activeenginelist().
 	local dV is node:deltav:mag.
 	local f is ship:availablethrust.
 	local m is ship:mass.
@@ -125,7 +129,7 @@ Function nodeBurnTime {
 // calculates half burn time for the next manuever node in order to calculate when to start the burn. ActiveEngines() needs to be run prior
 Function nodeBurnStart {
 	Parameter MnVnode.
-	Activeenginelist().
+	//Activeenginelist().
 	local dV is MnVnode:deltav:mag/2.
 	local f is ship:availablethrust.
 	local m is ship:mass.

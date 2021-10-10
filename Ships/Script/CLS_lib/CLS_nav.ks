@@ -48,13 +48,12 @@ function compass_for_vect {
 // Credit to TheGreatFez for this function. I have modified it slightly to limit angle of attack during high dynamic pressure
 function PitchProgram_Sqrt {
 	parameter stageNumber is 1.
-	local turnend is body:atm:height*1.75.
-	local alt is ship:apoapsis.
+	global turnend is body:atm:height*1.75.
 	
 	if stageNumber > 1 or eta:apoapsis > 180 {
-		global pitch_ang is 90 - max(5,min(90,90*sqrt(alt/turnend))).
+		global pitch_ang is 90 - max(5,min(90,90*sqrt(ship:apoapsis/turnend))).
 	} else {
-		global pitch_ang is 90 - max(5,min(85,90*sqrt(alt/turnend))).
+		global pitch_ang is 90 - max(5,min(85,90*sqrt(ship:apoapsis/turnend))).
 	}
 	if ship:q > 0.4 or missiontime < 90  {
 		global maxQsteer is max(0,10-ship:q*15).
@@ -64,10 +63,15 @@ function PitchProgram_Sqrt {
 	local pitch_max is pitch_for_vect(Ship:srfprograde:forevector)+maxQsteer.
 	local pitch_min is pitch_for_vect(Ship:srfprograde:forevector)-maxQsteer.
 	
-	if eta:periapsis > eta:apoapsis {
-		return max(min(pitch_ang,pitch_max),pitch_min).
+	//Pitches into kerbin when apoapsis is higher than target apoapsis to more efficienctly raise periapsis
+	if ship:apoapsis > targetapoapsis and ship:altitude > atmAlt {
+		if pitch_ang = 0 and stageNumber > 1 and eta:apoapsis < eta:periapsis {
+			return max(min(pitch_ang,pitch_max),pitch_min)-min(5,(ship:apoapsis-targetapoapsis)/15000).
+		} else {
+			return max(min(pitch_ang,pitch_max),pitch_min).
+		}
 	} else {
-		return max(min(pitch_ang+(abs(ship:verticalspeed)/50),pitch_max),pitch_min).
+		return max(min(pitch_ang,pitch_max),pitch_min).
 	}
 }
 

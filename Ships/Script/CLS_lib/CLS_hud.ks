@@ -188,7 +188,7 @@ Function countdown {
 Function AscentHUD {
 	
 	local hud_met is "Mission Elapsed Time: " + "T" + D_MT(missiontime) + " (" + runmode + ") ".
-	local hud_pitch is "Pitch: " + padding(Round(trajectorypitch,1),2,1,false) + "°".
+	local hud_pitch is "Pitch: " + padding(Round(trajectorypitch,1),2,1,false) + "° ".
 	local hud_stage is "Stage: " + currentstagenum + "/" + MaxStages.
 	local hud_staging is "-------".								
 	local hud_var1 is "Aero: " + padding(Round(ship:q,2),1,2,false).
@@ -199,10 +199,23 @@ Function AscentHUD {
 	local hud_azimuth is "Head:  " + padding(Round(launchazimuth,1),2,1,false) + "°".
 	
 	if runmode > -1 {
-		set hud_apo to "Apo:  " + padding(round(min(999,eta:apoapsis)),3,0,false) + "s ".
+		if eta:apoapsis < eta:periapsis {
+			if eta:apoapsis < 998 {
+				set hud_apo to "Apo:  " + padding(round(eta:apoapsis),3,0,false) + "s ".
+			} else {
+				set hud_apo to "Apo:  " + padding(floor(eta:apoapsis/60),3,0,false) + "m ".
+			}
+		} else {
+			if eta:periapsis < 998 {
+				set hud_apo to "Peri: " + padding(round(eta:periapsis),3,0,false) + "s ".
+			} else {
+				set hud_apo to "Peri: " + padding(floor(eta:periapsis/60),3,0,false) + "m ".
+			}
+		}
 		if mode = 0 {
-			set hud_fuel to "Fuel: " + padding(min(999,Round(RemainingBurn())),3,0,false) + "s".
-			if RemainingBurn() > 999 {
+			local f is RemainingBurn().
+			set hud_fuel to "Fuel: " + padding(min(999,Round(f)),3,0,false) + "s".
+			if f > 999 {
 				set hud_fuel to "Fuel: 999s".
 			}
 		} else {
@@ -214,11 +227,17 @@ Function AscentHUD {
 	} 
 	if ship:apoapsis > body:atm:height and currentstagenum > 1 and (Time:seconds - stagefinishtime) >= 5 {
 		if LEO = true {
-			set hud_var1 to "Circ: " + padding(Round(ABS(CircDVTargetPeri(targetapoapsis))),2,0,false) + "m/s ".
+			if threeBurn = true {
+				set hud_var1 to "Circ: " + padding(Round(BurnDv(targetapoapsis)+ABS(circDVTargetPeri(targetapoapsis))),2,0,false) + "m/s ".
+			} else {
+				set hud_var1 to "Circ: " + padding(Round(ABS(circDVPeri)),2,0,false) + "m/s ".
+			}
 		} else {
 			set hud_var1 to "Circ: " + padding(Round(CircDVApo()),2,0,false) + "m/s ".
 		}
 		set hud_var2 to "dV: " + padding(Round(StageDV(PayloadProtection)),2,0,false) + "m/s ".
+		set hud_azimuth to "Inc: " + padding(Round(ship:orbit:inclination,5),1,5,false) + "°".
+		set hud_pitch to "Ecc: " + padding(Round(ship:orbit:eccentricity,5),1,5,false).
 	}
 
 	local hud_printlist is list(hud_met,hud_pitch,hud_stage,hud_staging,hud_var1,hud_var2,hud_twr,hud_apo,hud_fuel,hud_azimuth).
@@ -236,24 +255,60 @@ Function AscentHUD {
 Function scrubGUI {
 	Parameter scrubreason.
 	Parameter runmode.
-
+	
 	local isDone is false.
 	local proceedMode is 0.
-	local gui is gui(200).
+	local gui is gui(290).
+	local scrubInfo is "Unknown Scrub Reason".
+	local scrubInfoCont is "".
+	
+	if scrubreason = "MFT Detect Issue" {
+		set scrubInfo to "CLS has failed to gather necessary info about the vehicles fuel type, mass & capacity. CLS will not function as intended without this information. Continue at your own risk!".
+	} else if scrubreason = "Subnominal Staging Detected" {
+		set scrubInfo to "Something is wrong with vehicle staging order. Staging requirements are as follows:".
+		set scrubInfoCont to "• Initial launch engines must be placed into stage 1.  • SRBs (if present) must be placed into stage 2.       • Launch clamps must be placed into stage 3 (if the rocket has SRBs) or stage 2 (if the rocket has no SRBs).".
+	} else if  scrubreason = "AG10 Advisory" {
+		set scrubInfo to "There is nothing in action group 10. AG10 is reserved for fairing jettison".
+	} else if scrubreason = "Crew Abort Procedure Error" {
+		set scrubInfo to "CLS has detected crew onboard, but nothing in the abort action group".
+	} else if scrubreason = "Insufficient Power" {
+		set scrubInfo to "Vehicle electric charge is below 40%".
+	}.
 	
 	//Label 0
-	local label0 is gui:addLabel("Unplanned Hold").
+	local label0 is gui:addLabel("<size=18>Unplanned Hold</size>").
 	set label0:style:align to "center".
 	set label0:style:hstretch to true. // fill horizontally
 	
 	//Label 1
 	local label1 is gui:addLabel(scrubreason).
+	set label1:style:fontsize to 16.
 	set label1:style:align to "center".
 	set label1:style:hstretch to true. // fill horizontally
 	
-	local continue is gui:addbutton("Continue Countdown").
-	local recycle is gui:addbutton("Recycle Countdown").
-	local scrub is gui:addbutton("Scrub Launch").
+	//Buttons
+	local buttonline1 is gui:addhlayout().
+	local buttonline2 is gui:addhlayout().
+	local continue is buttonline1:addbutton("Continue Countdown").
+	set continue:style:width to 145.
+	local recycle is buttonline1:addbutton("Recycle Countdown").
+	set recycle:style:width to 145.
+	local scrub is buttonline2:addbutton("Scrub Launch").
+	set scrub:style:width to 145.
+	local explain is buttonline2:addbutton("More info").
+	set explain:style:width to 145.
+	
+	//Label2
+	local label2 is gui:addLabel(scrubInfo).
+	set label2:style:align to "center".
+	set label2:style:hstretch to true.	
+	label2:hide().
+	
+	//Label3
+	local label3 is gui:addLabel(scrubInfoCont).
+	//set label3:style:align to "center".
+	set label3:style:hstretch to true.	
+	label3:hide().
 	
 	set continue:onclick to {
 		set isDone to true.
@@ -267,8 +322,12 @@ Function scrubGUI {
 		set isDone to true.
 		set proceedMode to 3.
 	}.
+	set explain:onclick to {
+		label2:show().
+		if label3:text:length > 0 { label3:show(). }
+	}.
 	gui:show().
 	wait until isDone.
 	gui:hide().
 	return proceedMode.
-}
+}.

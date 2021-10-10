@@ -27,6 +27,11 @@ Function warpControl {
 		}
 	//If circularisation burn is over 90 seconds away
 	} else if runmode = 4 and ship:altitude > body:atm:height and time:seconds < burnStartTime-90 {
+		if warp > 3 {
+			set warp to 3.
+		}
+	//If circularisation burn is over 45 seconds away
+	} else if runmode = 4 and ship:altitude > body:atm:height and time:seconds < burnStartTime-45 {
 		if warp > 2 {
 			set warp to 2.
 		}

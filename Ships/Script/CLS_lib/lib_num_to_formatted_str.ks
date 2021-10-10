@@ -7,7 +7,7 @@
 // The KSLib team have built an incrible library of Kerboscript, available at https://github.com/KSP-KOS/KSLib
 
 function padding {
-	Parameter num.               		// number to be formatted
+	Parameter num.               			// number to be formatted
 	Parameter leadingLength.                // minimum digits to the left of the decimal
 	Parameter trailingLength.               // digits to the right of the decimal
 	Parameter positiveLeadingSpace is true. // whether to prepend a single space to the output

@@ -44,7 +44,7 @@ Function SRBDetect {
 	global SRBs is list().
 	For P in plist {
 		if runMode = -1 {
-			If P:stage = (stage:number - 2) and P:modules:join(","):contains("ModuleEngine") and P:DryMass < P:WetMass and not P:HasModule("ModuleDecouple") { 
+			If P:stage >= (stage:number - 2) and P:modules:join(","):contains("ModuleEngine") and P:DryMass < P:WetMass and not P:HasModule("ModuleDecouple") { 
 				SRBList:add(p).
 			}	
 		} else {
@@ -87,6 +87,19 @@ Function FCDetect {
 	}
 }
 
+//Toggles Control Part hibernation
+Function controlHibernation {
+	local cList is list().
+	for p in ship:parts {
+		if p:hasmodule("ModuleCommand") {
+			cList:add(p).
+		}
+	}
+	for p in cList {
+		p:getmodule("ModuleCommand"):doaction("toggle hibernation",true).
+	}
+}
+
 // Creates a list of all engines
 Function EngineList {
 	global elist is list().
@@ -110,7 +123,7 @@ Function Activeenginelist {
 	}
 }
 
-// Creates a list of all active engines
+// Creates a list of all active SRBs
 Function ActiveSRBlist {
 	Enginelist().
 	global asrblist is list().
@@ -136,11 +149,9 @@ Function Ullagedetectfunc {
 Function Partlistmass {
 	Parameter plist.
 	local msum is 0.
-	//if plist:length > 0 {
-		For p in plist {
-			set msum to msum + p:mass.
-		}
-	//}
+	For p in plist {
+		set msum to msum + p:mass.
+	}
 	return msum.
 }
 
