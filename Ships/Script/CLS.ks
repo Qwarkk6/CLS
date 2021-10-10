@@ -35,7 +35,7 @@
 //   - Abort action group will be automatically triggered if conditions defined under runmode -666 are met.
 
 // Notes:
-//	 - This script has no dependant mods, however the script checks for parts from the Procedural Fairing mod.
+//	 - This script has no dependant mods, however the script checks for parts from the Procedural Fairing & Hullcam mods.
 //   - Variable identifiers which are no longer needed or have not been defined yet are set to "-".
 //	 - Can detect SRBs with thrust curves and will:		a) decouple them when they reach a low trust percentage		b) throttle main engine up to cover thrust losses due to throttle curve
 //	 - If the script progresses far enough to activate any stages, but then the script is terminated (either manually or due to anomaly detection) you will need to 'revert to launchpad' before using the script again in order to reset the stages.
@@ -80,7 +80,7 @@ set crewCount to ship:crew():length.
 clearscreen. unlock all. sas off. rcs off.
 Set Ship:control:pilotmainthrottle to 0.
 Set terminal:width to 52. Set terminal:height to 43.
-Set config:ipu to 1000.
+Set config:ipu to 800.
 
 // Steering manager / PID setup
 Set SteeringManager:RollTS to 5.			// Reduces oversensitive roll correction during ascent
@@ -101,11 +101,18 @@ runpath("0:/cls_lib/lib_num_to_formatted_str.ks").
 runpath("0:/cls_lib/CLS_log.ks").
 
 // One-time variables
-If Ship:name:length > 15 { Set Ship:name to "Vehicle". }						// Ensures vehicle name fits on terminal width
-If targetapoapsis < 400000 { set LEO to true. } else { set LEO to false. }		// Whether the target apoapsis is considered to be a low orbit (<400000)
-Set logtime to 60.																// Increment between mission log updates
-Set SecondsUntilLaunch to SecToLaunch(SecondsUntilLaunch).						// Checks input for SecondsUntilLaunch parameter and recalculates if necessary
-Activeenginelist(). FCDetect().			 										// Run during initialisation for HUD
+If Ship:name:length > 15 { Set Ship:name to "Vehicle". }										// Ensures vehicle name fits on terminal width
+set atmAlt to ship:body:atm:height+1000.
+If targetapoapsis < atmAlt*2 {													// Whether the target apoapsis is considered to be a low orbit (<400000)
+	set LEO to true.
+	lock orbitData to ship:periapsis.
+} else {
+	set LEO to false.
+	lock orbitData to ship:apoapsis.
+}		
+Set logtime to 60.																				// Increment between mission log updates
+Set SecondsUntilLaunch to SecToLaunch(SecondsUntilLaunch).										// Checks input for SecondsUntilLaunch parameter and recalculates if necessary
+Activeenginelist(). FCDetect().			 														// Run during initialisation for HUD
 set maxQReadout to false. set passQReadout to false.
 	
 // Calculates initial launch azimuth
@@ -304,6 +311,7 @@ Until launchcomplete {
 			} else {
 				stage.
 				scrollprint("SRB Ignition").
+				activeSRBlist().
 			}
 			Set tminus to tminus-1.
 		}
@@ -372,7 +380,7 @@ Until launchcomplete {
 	
 	// One-time actions 
 	If runmode = 1 {	
-		Activeenginelist().
+		//Activeenginelist().
 		set launchroll to launchroll + (launchazimuth - compass_for_vect(east_for())).
 		scrollprint("Starting Ascent Trajectory").
 		Set runmode to 2.
@@ -405,9 +413,6 @@ Until launchcomplete {
 			set trajectorypitch to pitch_for_vect(Ship:srfprograde:forevector).
 			set impStagingtime to 0.
 		}
-		
-		//Final steering command
-		lock steering to heading(launchazimuth,trajectorypitch,launchroll).
 		
 		// Ascent TWR control for first stage
 		If currentstagenum = 1 {
@@ -452,7 +457,7 @@ Until launchcomplete {
 				}
 				
 				// Detection of impending SRB flameout
-				If remainingBurnSRB() < 5 and remainingBurnSRB() > 0.1 and not staginginprogress {
+				If remainingBurnSRB() < 5 and remainingBurnSRB() > 0.1 and not staginginprogress and not ImpendingStaging {
 					Set ImpendingStaging to true.
 					if SRBtime = 0 {
 						set SRBtime to time:seconds.
@@ -497,7 +502,7 @@ Until launchcomplete {
 		}
 		
 		// Detects imminent fuel depletion of current main fuel tank
-		If RemainingBurn() < 5 and RemainingBurn() > 0.1 and not staginginprogress {
+		If RemainingBurn() < 5 and RemainingBurn() > 0.1 and not staginginprogress and not ImpendingStaging {
 			Set ImpendingStaging to true.
 			if impStagingtime = 0 {
 				set impStagingtime to time:seconds.
@@ -505,23 +510,12 @@ Until launchcomplete {
 			}
 		}
 		
-		//Throttles to 0.1 for fine tuning final apoapsis
-		If LEO = false {
-			if ship:apoapsis >= (targetapoapsis-3000) and apoapsis975 = false and not staginginprogress {
-				//lock throttle to TWRthrottle(UpperAscentTWR).
-				Set apoapsis975 to true.
-				Set throttletime to Time:seconds.
-				Set currentthrottle to throttle.
-				scrollprint("Throttling Down").
-			}
-		} else {
-			if ship:periapsis >= (targetapoapsis-3000) and apoapsis975 = false and not staginginprogress {
-				//lock throttle to TWRthrottle(UpperAscentTWR).
-				Set apoapsis975 to true.
-				Set throttletime to Time:seconds.
-				Set currentthrottle to throttle.
-				scrollprint("Throttling Down").
-			}
+		//Throttles for fine tuning final apoapsis
+		if orbitData >= (targetapoapsis-3000) and apoapsis975 = false and not staginginprogress {
+			Set apoapsis975 to true.
+			Set throttletime to Time:seconds.
+			Set currentthrottle to throttle.
+			scrollprint("Throttling Down").
 		}
 		if apoapsis975 = true and not staginginprogress {
 			Set warp to 0.
@@ -531,20 +525,24 @@ Until launchcomplete {
 		}
 		
 		//End of ascent detection
-		if LEO = false {
-			//Apoapsis has reached target apoapsis
-			if ship:apoapsis >= (targetapoapsis-250) {
+		if not staginginprogress {
+			if orbitData >= (targetapoapsis-250) {
 				set ascentComplete to true.
 			}
-		} else {
-			//Periapsis has reached target orbit. Circularisation will happen at peri with a retorgrade burn.
-			if ship:periapsis >= (targetapoapsis-250) {
-				set ascentComplete to true.
-			}
-			//Apoapsis is getting too large. Vehicle has enough dV to stop burn, burn at apoapsis to raise periapsis and then circularise at periapsis with a retrograde burn.
-			if ship:apoapsis >= targetapoapsis and eta:apoapsis > 600 and BurnDv(targetapoapsis)+circDVTargetPeri(targetapoapsis) < stageDV(PayloadProtection) {
-				set ascentComplete to true.
-				set threeBurn to true.
+			if LEO = true {
+				//Apoapsis is getting too large. Vehicle has enough dV to stop burn, burn at apoapsis to raise periapsis and then circularise at periapsis with a retrograde burn.
+				//if ship:apoapsis >= targetapoapsis and eta:apoapsis > 300 and BurnDv(targetapoapsis)+circDVTargetPeri(targetapoapsis) < stageDV(PayloadProtection) {
+				if ship:apoapsis >= 1.75*targetapoapsis and eta:apoapsis > 480 and eta:apoapsis < eta:periapsis {
+					if ship:altitude > body:atm:height and BurnDv(targetapoapsis)+circDVTargetPeri(targetapoapsis) < stageDV(PayloadProtection) {
+						set ascentComplete to true.
+						set threeBurn to true.
+					}
+				}
+				//If ship is close to periapsis (quarter of orbit) (therefore not burning efficiently to raise it) 
+				if eta:periapsis < ship:orbit:period/4 and ship:periapsis > atmAlt {
+					set ascentComplete to true.
+					set threeBurn to true.
+				}
 			}
 		}
 		
@@ -565,12 +563,12 @@ Until launchcomplete {
 					set lowDv to true.
 				}
 			} else {
-				//Past apoapsis and current periapsis is above atmosphere (we are in orbit). Insufficient dV to continue raising periapisis to target and then circularise.
-				if eta:apoapsis > eta:periapsis and circDVTargetPeri() >= (StageDV(PayloadProtection)*0.95) and ship:periapsis > Ship:body:atm:height {
+				//Current periapsis is above atmosphere (we are in orbit). Vehicle wont have enough deltaV to circularise if it raises its apoapsis any further. Cuts the burn short and will circularise at current periapsis.
+				if ship:periapsis > atmAlt and circDVPeri()>=(StageDV(PayloadProtection)*0.95) {
 					set lowDv to true.
 				}
-				//Current periapsis is above atmosphere (we are in orbit). Vehicle wont have enough deltaV to circularise if it raises its apoapsis any further. Cuts the burn short and will circularise at current periapsis.
-				if ship:periapsis > Ship:body:atm:height and circDVPeri()>=(StageDV(PayloadProtection)*0.95) {
+				//Periapsis is in atmosphere and if we continue to burn we may not have enough dv left to burn at apo to bring peri outside atmosphere and achieve minimum orbit
+				if ship:periapsis < atmAlt and BurnDv(atmAlt) >= (StageDV(PayloadProtection)*0.95) {
 					set lowDv to true.
 				}
 			}
@@ -590,12 +588,18 @@ Until launchcomplete {
 		if hasnode = false {
 			if LEO = true {
 				if threeBurn = true {
-					set cnode to node(time:seconds + eta:apoapsis, 0, 0, BurnDv(targetapoapsis)).
+					set cnode to node(time:seconds + eta:apoapsis, 0, 0, min(BurnDv(targetapoapsis),StageDV(PayloadProtection))).
 				} else {
-					set cnode to node(time:seconds + eta:periapsis, 0, 0, circDVPeri()). 	
+					//If apoapsis is closer to target
+					if abs(ship:apoapsis-targetapoapsis) < (targetapoapsis-ship:periapsis) and circDVApo() < (StageDV(PayloadProtection)*0.95) {
+						set cnode to node(time:seconds + eta:apoapsis, 0, 0, min(circDVApo(),StageDV(PayloadProtection)*0.975)).
+					//If periapsis is closer to target
+					} else if abs(ship:apoapsis-targetapoapsis) > (targetapoapsis-ship:periapsis) and circDVPeri() < (StageDV(PayloadProtection)*0.95){
+						set cnode to node(time:seconds + eta:periapsis, 0, 0, min(circDVPeri(),StageDV(PayloadProtection)*0.975)).
+					}
 				}
 			} else {
-				set cnode to node(time:seconds + eta:apoapsis, 0, 0, circDVApo()).		
+				set cnode to node(time:seconds + eta:apoapsis, 0, 0, min(circDVApo(),StageDV(PayloadProtection)*0.975)).		
 			}
 			add cnode.
 			set burnStartTime to time:seconds + cnode:eta - nodeBurnStart(cnode).
@@ -604,10 +608,13 @@ Until launchcomplete {
 			set burnsteer to false.
 			set dv0 to cnode:deltav.
 			
-			if currentstagenum < MaxStages {
+			if currentstagenum = 1 or StageDV(PayloadProtection) < cnode:deltav:mag and currentstagenum < maxStages {
 				Set EngstagingOverride to true.
 			}
 			if time:seconds < burnStartTime {
+				lock steering to Ship:prograde:forevector.
+				Set config:ipu to 200.						// Low power mode for coast
+				controlHibernation().
 				set runmode to 4.
 			} else {
 				rcs on.
@@ -620,22 +627,28 @@ Until launchcomplete {
 	
 	// Coast phase
 	If runmode = 4 {
-		lock steering to Ship:prograde:forevector.
 		if ship:altitude > body:atm:height {
-			if currentstagenum > 1 {
-				//if hasnode {
-					if time:seconds >= burnStartTime-90 {			// Will take the vehicle out of warp (and prevent further warping) 90 seconds before the circularisation burn is due to start
-						scrollprint("Preparing for Burn").
-						scrollprint("          Delta-v requirement: " + ceiling(cnode:deltav:mag,2) + "m/s",false).
-						scrollprint("          Burn time: " + d_mt(burntime),false).
-						rcs on.
+			//if currentstagenum > 1 {
+				if time:seconds >= burnStartTime-45 {			// Will take the vehicle out of warp (and prevent further warping) 90 seconds before the circularisation burn is due to start
+					scrollprint("Preparing for Burn").
+					scrollprint("          Delta-v requirement: " + ceiling(cnode:deltav:mag,2) + "m/s",false).
+					scrollprint("          Burn time: " + d_mt(burntime),false).
+					rcs on.
+					Set config:ipu to 800.		// return to full power mode
+					controlHibernation().
+					
+					//dV check in case boil-off losses could result in incomplete burn
+					if StageDV(PayloadProtection) < cnode:deltav:mag {
+						remove cnode.
+						set runmode to 3.	
+					} else {
 						set runmode to 5.
 					}
-				//}
-				stagingRCS(stagefinishtime).			// Activates RCS systems for 10 seconds after staging only if throttle is < 0.1.
-			} else {
-				Set EngstagingOverride to true.
-			}
+				}
+				//stagingRCS(stagefinishtime).			// Activates RCS systems for 10 seconds after staging only if throttle is < 0.1.
+			//} else {
+			//	Set EngstagingOverride to true.
+			//}
 		}
 	}
 	
@@ -822,6 +835,7 @@ Until launchcomplete {
 				}
 				//else If Ship:availablethrust >= 0.01 and ((Time:seconds-stagetime)-throttledelay) < 3 {
 				else If Ship:availablethrust >= 0.01 {
+					Activeenginelist().
 					Set staginginprogress to false.
 					Set EngstagingOverride to false.
 					Set stagefinishtime to Time:seconds.
@@ -859,7 +873,7 @@ Until launchcomplete {
 			scrollprint("Ship breaking apart").
 		}
 		// Abort if falling back toward surface (i.e. insufficient thrust)
-		If ship:altitude < body:atm:height and verticalspeed < -1.0 {
+		If runmode = 2 and verticalspeed < -1.0 {
 			Set runmode to -666.
 			scrollprint("Terminal Thrust").
 		}
@@ -893,7 +907,7 @@ Until launchcomplete {
 			}
 		}
 	}
-wait 0.001.
+wait 0.01.
 }
 
 // Main loop end
@@ -903,7 +917,7 @@ sas on. rcs off.
 // End of the program
 If launchcomplete {
 	wait 10.
-	remove cnode.
+	if hasnode { remove cnode. }
 	scrollprint("Program Completed").
 	if csvLog = true {
 		log profileresult() to logPath.

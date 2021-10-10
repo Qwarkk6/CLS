@@ -20,7 +20,7 @@ set chuteStat to "-".
 set drogueStat to "-".
 set FCStatus to "Inactive".
 
-//Detect if ship has aborted
+//Detect if ship has pad aborted
 if alt:radar < 5000 {
 	set abortOverride to true.
 } else {
@@ -61,7 +61,7 @@ set entrytime to time:seconds.
 wait until shipQtest(shipQ1) = false.
 wait until shipQtest(shipQ1) = true or abortOverride = true.
 
-//Drogue Deploy - 
+//Drogue Deploy
 if stockDrogueList:length > 0 or sstuList:length > 0 {
 	set shipStat to "Awaiting Drogue Deploy".
 	wait until Body:atm:altitudepressure(ship:altitude) > 0.02 and shipQ < drogueMaxQ.
@@ -114,7 +114,6 @@ if runmode = 2 {
 
 //Final descent
 if runMode = 3 {
-	//lock t to alt:radar / abs(ship:verticalspeed).
 	if stockDrogueList:length > 0 and abortOverride = false {
 		until stockDrogueList:length = 0 {
 			if alt:radar < 1050 {
