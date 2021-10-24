@@ -1,28 +1,18 @@
 //Monitors engines for flameout
 Function EngineFlameout {
 	list engines in engList.
-	if engList:length = 1 {
-		For p in engList {
-			if p:getmodule("ModuleEnginesFX"):getfield("status") = "Flame-Out!" {
-				return true.
-			} else {
-				return false.
-			}
+	For e in engList {
+		If e:ignition and not e:flameout {
+			return false.
 		}
-	} else {
-		For e in engList {
-			If e:ignition and not e:flameout {
-				return false.
-			}
-			If e:ignition and e:flameout {
-				return true.
-			}
+		If e:ignition and e:flameout {
+			return true.
 		}
 	}
 }
 
 //Resource monitoring
-function AbortResMonitor {	
+function ReourceTracker {	
 	list resources in resList.
 	For res in reslist {
 		If res:Name = "ElectricCharge" {
@@ -35,43 +25,40 @@ function AbortResMonitor {
 } 
 
 //kOS terminal readouts
-function AbortHUD {
+function HUD {
 	Print "Abort Procedure          " at (0,0).
-	Print "Status: " + shipStat + "                    " at (0,1).
+	Print "Status: " + status + "                    " at (0,1).
 	Print "RCS: " + padding(rcsFuel,2,1,false) + "% | EC: " +  padding(EC,2,1,false) + "%   " at (0,2).
 	Print "------------------" at (0,3).
 }
 
 //Initialise
 clearscreen.
-set script to "Running".
+RCS on. SAS off.
+abort on.
 runpath("0:/cls_lib/lib_num_to_formatted_str.ks").
 runpath("0:/cls_lib/lib_navball.ks").
 runpath("0:/cls_lib/CLS_nav.ks").
-RCS on. SAS off.
-abort on.
 
 //HUD setup
-set shipStat to "Abort Burn".
+set status to "Abort Burn".
 
 //Steering setup
-set Yaw to ship:facing:yaw.
-set Roll to ship:facing:roll.
-set Pitch to ship:facing:pitch.
+//System of slowing pitching and yawing away from original steering atitude to ensure aborted capsule is clear of previous stages
+set yaw to ship:facing:yaw.
+set roll to ship:facing:roll.
+set pitch to ship:facing:pitch.
 set entrytime to time:seconds.
-lock tRate to (time:seconds - entrytime)*3.
-lock steering to R(Pitch+tRate,Yaw+tRate,Roll).
+lock turnRate to (time:seconds - entrytime)*3.
+lock steering to R(pitch+turnRate,yaw+turnRate,roll).
 
 wait until ship:verticalspeed > 1.
 
-when script = "Running" then {
-	AbortResMonitor(). AbortHUD().
-	return true.
+until ship:verticalspeed < 0 or pitch_for_vector(ship:srfprograde:forevector) < 10 {
+	ReourceTracker(). HUD().
+	
+	if EngineFlameout() and status = "Abort Burn" {
+		set status to "Coasting".
+	}
 }
-
-when EngineFlameout() = true then {
-	set shipStat to "Coasting".
-}
-
-wait until ship:verticalspeed < 0 or pitch_for_vect(ship:srfprograde:forevector) < 10.
 runpath("0:/ChuteDescent.ks").
