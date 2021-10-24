@@ -6,10 +6,10 @@
 
 // Checks if a resource is above a specified threshold
 Function resourceCheck {
-	Parameter rname.
+	Parameter resourceName.
 	Parameter threshold.
 	For res in ship:resources {
-		If res:name = rname {
+		If res:name = resourceName {
 			If (res:amount/res:capacity) <= threshold {
 				return false.
 			} else {
@@ -20,28 +20,28 @@ Function resourceCheck {
 }
 
 // Detects the fuel capacity of a given partlist
-Function plistFuelRem {
+Function FuelRemaining {
 	Parameter plist.
-	Parameter rname.
-	local f is 0.
+	Parameter resourceName.
+	local r is 0.
 	For tank in plist {
 		For res in tank:resources {
-			if res:name = rname and res:enabled = true {
-				set f to (f + res:amount).
+			if res:name = resourceName and res:enabled = true {
+				set r to (r + res:amount).
 			}
 		}
 	}
-	Return f.
+	return r.
 }
 
 // Identifies the fuel tanks(s) providing fuel for the stage. First creates a list of all fuel tanks and the stage they are assocated with. Then compares the associated stages to find the tanks(s) associated with the largest/current stage.
 Function FuelTank {	
-	Parameter rname.
+	Parameter resourceName.
 	local MFT is list(list(),list(),list()).
 	global stagetanks is list().
 	for tank in ship:parts {
 		for res in tank:resources {
-			if res:name = rname and res:amount > 1 and res:enabled = true {
+			if res:name = resourceName and res:amount > 1 and res:enabled = true {
 				MFT[0]:add(tank).
 				MFT[2]:add(tank).
 			}
@@ -50,7 +50,7 @@ Function FuelTank {
 	for p in MFT[0] {
 		MFT[1]:add(p:stage).
 	}
-	Until MFT[1]:length = 1 {
+	 Until MFT[1]:length = 1 {
 		if MFT[1][0] <= MFT [1][1] {
 			MFT[1]:remove(0).
 			MFT[0]:remove(0).
@@ -72,12 +72,12 @@ Function FuelTank {
 
 // Identifies the fuel tanks(s) providing fuel for the stage. First creates a list of all fuel tanks and the stage they are assocated with. Then compares the associated stages to find the tanks(s) with the most amount of a given fuel type.
 Function FuelTankUpper {	
-	Parameter rname.
+	Parameter resourceName.
 	local MFT is list(list(),list(),list()).
 	global stagetanks is list().
 	for tank in ship:parts {
 		for res in tank:resources {
-			if res:name = rname and res:amount > 1 and res:enabled = true {
+			if res:name = resourceName and res:amount > 1 and res:enabled = true {
 				MFT[0]:add(tank).
 				MFT[1]:add(res:amount).
 				MFT[2]:add(tank).
@@ -105,8 +105,8 @@ Function FuelTankUpper {
 }
 
 //Detect main fuel 
-Function MainFuelDetect {
-	if runmode > -1 {
+Function PrimaryFuel {
+	if runmode > 0 {
 		Activeenginelist().
 		global engine is aelist[0].
 	} else {
@@ -130,41 +130,39 @@ Function MainFuelDetect {
 }
 
 //Determines mass of main fuel
-Function MainFuelMass {
-	local resMass is list().
-	local resName is list().
+Function PrimaryFuelMass {
+	global resourceMass is list().
+	global resourceName is list().
 	For res in ship:resources {
-		resName:add(res:name).
+		resourceName:add(res:name).
+		resourceMass:add(res:density).
 	}
-	for res in ship:resources {
-		resMass:add(res:density).
-	}
-	Global ResourceOneMass is resMass[resName:find(ResourceOne)].
-	Global ResourceTwoMass is resMass[resName:find(ResourceTwo)].
+	Global ResourceOneMass is resourceMass[resourceName:find(ResourceOne)].
+	Global ResourceTwoMass is resourceMass[resourceName:find(ResourceTwo)].
 }
 
 //Detects solid fuel type 
-Function SolidFuelDetect {
-	ActiveSRBlist().
-	local resCheck is false.
+Function SolidFuel {
 	
-	if asrblist:length > 0 {
-		global srb is asrblist[0].
-		set resCheck to true.
-	} else if SRBs:length > 0 {
-		For p in SRBs {
-			if p:stage = stage:number-1 {
-				global srb is p.
-				set resCheck to true.
-			} else if p:stage = stage:number-2 {
-				global srb is p.
-				set resCheck to true.
+	if asrblist:length > 0 or SRBs:length > 0 {
+		if asrblist:length > 0 {
+			global srb is asrblist[0].
+		} else if SRBs:length > 0 {
+			For p in SRBs {
+				if p:stage = stage:number-1 {
+					global srb is p.
+				} else if p:stage = stage:number-2 {
+					global srb is p.
+				}
 			}
 		}
-	}
-	if resCheck = true {
 		local res is srb:consumedResources:values[0]:tostring.
 		local res is res:substring(17,res:length-17).
 		global SolidFuelName is res:remove(res:length-1,1).
+		for res in ship:resources {
+			if res:name = SolidFuelName {
+				global SolidFuelMass is res:density.
+			}
+		}
 	}
 }

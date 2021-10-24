@@ -6,7 +6,7 @@
 
 //Checks for common errors in staging
 Function stagingCheck {
-	local x is true.
+	local check is true.
 	local plist is list().
 	For P in ship:parts {
 		if not P:hasmodule("MuMechModuleHullCameraZoom") {
@@ -14,27 +14,43 @@ Function stagingCheck {
 		}
 	}
 	For P in plist {
-		If mode = 1 {
+		If vehicleConfig = 1 {
 			//If launch clamps arent in the correct stage
 			if P:hasmodule("launchclamp") and P:stage <> (stage:number-3) {
-				set x to false.
+				set check to false.
 			}
 			//If there is a part in the next 2 stages that isnt an engine
 			if p:stage >= (stage:number-2) and not P:modules:join(","):contains("ModuleEngine") {
-				set x to false.
+				set check to false.
 			}
-		} else if mode = 0 {
+		} else if vehicleConfig = 0 {
 			//If launch clamps arent in the correct stage
 			if P:hasmodule("launchclamp") and P:stage <> (stage:number-2) {
-				set x to false.
+				set check to false.
 			}
 			//If there is a part in the next stage that isnt an engine
 			if p:stage >= (stage:number-1) and not P:modules:join(","):contains("ModuleEngine") {
-				set x to false.
+				set check to false.
 			}
 		} 
 	}
-	return x.
+	return check.
+}
+
+//Checks for presence of launch clamps
+Function launchClampCheck {
+	local plist is ship:parts.
+	local clampList is list().
+	For P in plist {
+		if P:hasmodule("launchclamp") {
+			clampList:add(p).
+		}
+	}
+	if clampList:length = 0 {
+		return false.
+	} else {
+		return true.
+	}
 }
 
 // Detects the presence of SRBs
@@ -43,7 +59,7 @@ Function SRBDetect {
 	local SRBList is list().
 	global SRBs is list().
 	For P in plist {
-		if runMode = -1 {
+		if runMode = 0 {
 			If P:stage >= (stage:number - 2) and P:modules:join(","):contains("ModuleEngine") and P:DryMass < P:WetMass and not P:HasModule("ModuleDecouple") { 
 				SRBList:add(p).
 			}	
@@ -54,7 +70,7 @@ Function SRBDetect {
 		}
 	}
 	For e in SRBList {
-		if runMode = -1 {
+		if runMode = 0 {
 			if e:allowshutdown = false and e:throttlelock = true {
 				SRBs:add(e).
 			}
@@ -65,40 +81,72 @@ Function SRBDetect {
 		}
 	}
 	if SRBs:length > 0 {
-		set mode to 1.
+		set vehicleConfig to 1.
 	} else {
-		set mode to 0.
+		set vehicleConfig to 0.
 	}
 }
 
 //Creates a list of fuel cells
-Function FCDetect {
-	local resConvert is list().
+Function FuelCellDetect {
 	global FCList is list().
 	For p in ship:parts {
 		if p:hasmodule("ModuleResourceConverter") {
-			resConvert:add(p).
-		}
-	}
-	For p in resConvert {
-		if p:getmodule("ModuleResourceConverter"):allevents:join(","):contains("start fuel cell") {
-			FCList:add(p).
+			if p:getmodule("ModuleResourceConverter"):allactions:join(","):contains("toggle converter") {
+				FCList:add(p).
+			}
 		}
 	}
 }
 
-//Toggles Control Part hibernation
-Function controlHibernation {
-	local cList is list().
-	for p in ship:parts {
-		if p:hasmodule("ModuleCommand") {
-			cList:add(p).
-		}
+//Activates any fuel cells on board
+Function FuelCellToggle {
+	For p in FCList {
+		p:getmodule("ModuleResourceConverter"):doaction("toggle converter",true).
 	}
-	for p in cList {
-		p:getmodule("ModuleCommand"):doaction("toggle hibernation",true).
+	if fuelCellActive = false {
+		set fuelCellActive to true.
+		scrollprint("Activating Fuel Cells").
+	} else {
+		set fuelCellActive to false.
+		scrollprint("Deactivating Fuel Cells").
 	}
 }
+
+//Toggles Control Part hibernation
+Function lowPowerMode {
+	for p in ship:parts {
+		if p:hasmodule("ModuleCommand") {
+			p:getmodule("ModuleCommand"):doaction("toggle hibernation",true).
+		}
+	}
+}
+
+//Used in pre-launch to gather info about first stage engines prior to ignition
+Function PrelaunchEngList {
+	EngineList().
+	Activeenginelist().
+	ActiveSRBlist().
+	local pleList is list().
+	for p in elist {
+		if p:stage = stage:number -1 {
+			pleList:add(p).
+		} 
+		if vehicleConfig = 1 {
+			if p:stage = stage:number -2 {
+				pleList:add(p).
+			}
+		}
+	}
+	for e in pleList {
+		if e:allowshutdown {
+			aelist:add(e).
+			set e:thrustlimit to 100.
+		} else {
+			asrblist:add(e).
+		}
+	}
+}	
 
 // Creates a list of all engines
 Function EngineList {
@@ -134,43 +182,85 @@ Function ActiveSRBlist {
 	}
 }
 
+//Detects if the vehicle has gimballing ability & if the gimbal is unlocked (locked = true)
+Function GimbalDetect {
+	Activeenginelist().
+	local check is false.
+	For p in aelist {
+		If P:modules:join(","):contains("ModuleGimbal") {
+			if P:getmodule("modulegimbal"):getfield("gimbal") = false {
+				set check to true.
+			}
+		}
+	}
+	return check.
+}
+
 // Detects whether staging has ignited Ullage motors.
-Function Ullagedetectfunc {
-	global UllageDetect is false.
+Function detectUllage {
+	global UllageDetected is false.
 	EngineList().
 	For e in elist {
 		if e:ignition = true and e:thrust > 0.01 and e:allowshutdown = false and e:resources:length > 0 {
-			Set UllageDetect to true.
+			Set UllageDetected to true.
 		}
 	}
 }
 
 // calculates total mass of a partlist
-Function Partlistmass {
+Function PartlistMass {
 	Parameter plist.
-	local msum is 0.
+	local mass is 0.
 	For p in plist {
-		set msum to msum + p:mass.
+		set mass to mass + p:mass.
 	}
-	return msum.
+	return mass.
 }
 
 // calculates total available thrust of a partlist
-Function Partlistavthrust {
+Function PartlistAvailableThrust {
 	Parameter plist.
-	local t is 0.1.
+	local thrust is 0.01.
 	For e in plist {
-		set t to t + e:availablethrust.
+		if e:getmodule("moduleEnginesFX"):allfields:join(","):contains("% rated thrust") {
+			local thrustCurve is e:getmodule("moduleEnginesFX"):getfield("% rated thrust").
+			if thrustCurve > 1 {
+				set thrust to thrust + e:availablethrust*thrustCurve.
+			} else {
+				set thrust to thrust + e:availablethrust.
+			}
+		} else {
+			set thrust to thrust + e:availablethrust.
+		}
 	}
-	return t.
+	return thrust.
 }
 
 // calculates total current thrust of a partlist accounting for thrust limits or thrust curves
-Function Partlistcurthrust {
+Function PartlistCurrentThrust {
 	Parameter plist.
-	local t is 0.1.
+	local thrust is 0.01.
 	For e in plist {
-		set t to t + e:thrust.
+		set thrust to thrust + e:thrust.
 	}
-	return t.
+	return thrust.
+}
+
+//Calculates potential thrust of a partlist
+Function PartlistPotentialThrust {
+	Parameter plist.
+	local thrust is 0.01.
+	For e in plist {
+		if e:getmodule("moduleEnginesFX"):allfields:join(","):contains("% rated thrust") {
+			local thrustCurve is e:getmodule("moduleEnginesFX"):getfield("% rated thrust").
+			if thrustCurve > 1 {
+				set thrust to thrust + e:possiblethrust*thrustCurve.
+			} else {
+				set thrust to thrust + e:possiblethrust.
+			}
+		} else {
+			set thrust to thrust + e:possiblethrust.
+		}
+	}
+	return thrust.
 }

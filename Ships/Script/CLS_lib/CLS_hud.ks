@@ -10,15 +10,14 @@ Function scrollprint {
 	Parameter nextprint.
 	Parameter timeStamp is true.
 	local maxlinestoprint is 33.	// Max number of lines in scrolling print list
-	//local listlinestart is 6.	// First line For scrolling print list
-	local TtLaunch is "T" + d_mt(cdown).
-	local ElapsedTime is "T" + d_mt(missiontime).
+	local t_minus is "T" + hud_missionTime(cdown).
+	local t_plus is "T" + hud_missionTime(missiontime).
 
 	if timeStamp = true {
-		if runmode = -1 {
-			printlist:add(TtLaunch + " - " + nextprint).
+		if runmode = 0 {
+			printlist:add(t_minus + " - " + nextprint).
 		} else {
-			printlist:add(ElapsedTime + " - " + nextprint).
+			printlist:add(t_plus + " - " + nextprint).
 		}
 	} else {
 		printlist:add(nextprint).
@@ -43,17 +42,17 @@ Function scrollprint {
 
 // presents time of day in hh:mm:ss format
 Function t_o_d {
-	parameter ts.
+	parameter time.
 	
-	global hpd is round(body:rotationperiod).
-	global dd is floor(ts/(hpd*3600)).  
-	global hh is floor((ts-hpd*3600*dd)/3600).  
-	global mm is floor((ts-3600*hh-hpd*3600*dd)/60).  
-	global ss is round(ts) - mm*60 -   hh*3600 - hpd*3600*dd. 
+	local hoursPerDay is round(body:rotationperiod).
+	local dd is floor(time/(hoursPerDay*3600)).  
+	local hh is floor((time-hoursPerDay*3600*dd)/3600).  
+	local mm is floor((time-3600*hh-hoursPerDay*3600*dd)/60).  
+	local ss is round(time) - mm*60 -   hh*3600 - hoursPerDay*3600*dd. 
 
 	if ss = 60 {
-	global ss is 0.
-		global mm is mm+1.
+		set ss to 0.
+		set mm to mm+1.
 	}
 	
 	if ss < 10 and mm > 10 {
@@ -66,81 +65,80 @@ Function t_o_d {
 		return hh + ":0" + mm + ":0" + ss.
 	}
 	else {
-	return hh + ":" + mm + ":" + ss.
+		return hh + ":" + mm + ":" + ss.
 	}	
 }
 
 // presents mission time to mm:ss format
-function d_mt {
-	parameter mt.
-	local m is floor(Abs(mt)/60).
-	local s is round(Abs(mt))-(m*60).
+function hud_missionTime {
+	parameter mission_time.
+	local mm is floor(Abs(mission_time)/60).
+	local ss is round(Abs(mission_time))-(mm*60).
 	local t is "-".
 	
-	If mt < 0 {
+	If mission_time < 0 {
 		set t to "-".
 	} else {
 		set t to "+".
 	}
 	
-	if s < 10 {
-		set s to "0" + s.
+	if ss < 10 {
+		set ss to "0" + ss.
 	}
-	if s = 60 {
-		set m to m+1.
-		set s to "00".
+	if ss = 60 {
+		set mm to mm+1.
+		set ss to "00".
 	}
-	if m < 10 {
-		set m to "0" + m.
+	if mm < 10 {
+		set mm to "0" + mm.
 	}
 	
-	return t + m + ":" + s.
+	return t + mm + ":" + ss.
 }
 
 // Converts stage number to engine readout text.
 Function engineReadout {
 	parameter stage.
-	local stageNum is list(0,1,2,3).
+	local stageNumber is list(0,1,2,3).
 	local string is list("-","Main Engine","Second Engine","Third Engine").
 	
 	if stage > 3 {
 		Return "Engine".
 	} else {
-		return string[stageNum:find(stage)].
+		return string[stageNumber:find(stage)].
 	}
 }
 
+//Function for detecting when maxQ occurs
+Function maxQ {
+	parameter dynamicPressure.
+	
+	if dynamicPressure = 0 {
+		global dynamicPressure is ship:Q.
+	}
+	if time:Seconds > dynamicPressureTime {
+		if ship:Q < dynamicPressure {
+			scrollPrint("Max Q").
+			set passedMaxQ to true.
+		} else {
+			global dynamicPressure is ship:Q.
+			global dynamicPressureTime is time:seconds+0.5.
+		}
+	}
+}
+	
 // Periodic readouts for vehicle speed, altitude and downrange distance
 Function eventLog {
-	local logTimeIncrement is 60.
-	local shipGEO is ship:geoposition.
-	
-	If runMode > 1 {
-		if ship:q*15 > 10 and maxQReadout = false {
-			scrollPrint(Ship:name + " is experiencing Max Q").
-			set maxQReadout to true.
-		}
-		if ship:q*15 < 10 and maxQReadout = true and passQReadout = false {
-			scrollPrint(Ship:name + " has passed through Max Q").
-			set passQReadout to true.
-		}			
-		If missiontime >= logTime {
-			
-			//Downrange calculations
-			local v1 is shipGEO:position - ship:body:position.
-			local v2 is launchLoc:position - ship:body:position.
-			local distAng is vang(v1,v2).
-			local downRangeDist is distAng * constant:degtorad * ship:body:radius.
-			
-			scrollPrint("Speed: "+FLOOR(Ship:AIRSPEED*3.6) + "km/h").
-			scrollPrint("          Altitude: "+ROUND(Altitude/1000,2)+"km",false).
-			scrollPrint("          Downrange: "+ROUND(downRangeDist/1000,2)+"km",false).
-			If runMode < 3 {
-				Set logTime to logTime + (logTimeIncrement).
-			} else {
-				Set logTime to logTime + 100000.
-			}
-		}
+	If missiontime >= logTime {
+		//Downrange calculations
+		local v1 is ship:geoposition:position - ship:body:position.
+		local v2 is launchLoc:position - ship:body:position.
+		local downRangeDistance is vang(v1,v2) * constant:degtorad * ship:body:radius.
+		
+		scrollPrint("Speed: "+FLOOR(Ship:AIRSPEED*3.6) + "km/h").
+		scrollPrint("          Altitude: "+ROUND(ship:altitude/1000,2)+"km",false).
+		scrollPrint("          Downrange: "+ROUND(downRangeDistance/1000,2)+"km",false).
+		Set logTime to logTime + 60.
 	}
 }
 
@@ -148,6 +146,7 @@ Function eventLog {
 Function HUDinit {
 	Parameter launchtime.
 	Parameter targetapoapsis.
+	Parameter targetperiapsis.
 	Parameter targetinclination.
 	Parameter logging.
 	
@@ -156,7 +155,7 @@ Function HUDinit {
 	if targetapoapsis = maxApo {
 		Print "Target Parking Orbit: Highest Possible" at (0,2).
 	} else {
-		Print "Target Parking Orbit: " + Ceiling(targetapoapsis,2) + "m" at (0,2).
+		Print "Target Parking Orbit: " + Ceiling(targetapoapsis/1000,2) + "km x " + Ceiling(targetperiapsis/1000,2) + "km" at (0,2).
 	}
 	Print "Target Orbit Inclination: " + Ceiling(ABS(targetinclination),2) + "°" at (0,3).
 	if logging {
@@ -164,9 +163,6 @@ Function HUDinit {
 	} else {
 		Print "----------------------------------------------------" at (0,40).
 	}
-	Print "Fuel: 000s" at (41,42).
-	Print "Offset: --°" at (1,42).
-	Print "Apo:  000s" at (41,41).
 }
 
 // Handles countdown 
@@ -177,7 +173,7 @@ Function countdown {
 	
 	if cdlist[cdownreadout] = tminus and tminus > 3 {
 		if ABS(cdown) <= tminus {
-			scrollPrint("T" + d_mt(cdown),false).
+			scrollPrint("T" + hud_missionTime(cdown),false).
 			set cdownreadout to min(cdownreadout+1,9).
 			global tminus is tminus-1.
 		}
@@ -187,63 +183,57 @@ Function countdown {
 // Identifies / Calculates data to be displayed on the terminal HUD.
 Function AscentHUD {
 	
-	local hud_met is "Mission Elapsed Time: " + "T" + D_MT(missiontime) + " (" + runmode + ") ".
+	local hud_met is "Mission Elapsed Time: " + "T" + hud_missionTime(missiontime) + " (" + runmode + ") ".
+	local hud_staging is "-------".
+	local hud_apo is "Apo: " + padding(floor(ship:apoapsis/1000,2),1,2,false) + "km ".
+	local hud_apo_eta is "eta: " + padding(round(eta:apoapsis,1),3,1,false) + "s ".
+	local hud_peri is "Per: " + padding(floor(ship:periapsis/1000,2),1,2,false) + "km ".
+	local hud_peri_eta is "eta: " + padding(round(eta:periapsis,1),3,1,false) + "s ".
+	local hud_ecc is "Ecc: " + padding(max(Round(ship:orbit:eccentricity,4),0.0001),1,4,false).
+	local hud_inc is "Inc: " + padding(Round(ship:orbit:inclination,5),1,5,false) + "°".
+	local hud_dV is " dV: ------- ".
+	local hud_dV_req is "Req: " + padding(Round(circulariseDV_Apoapsis()),2,0,false) + "m/s ".
 	local hud_pitch is "Pitch: " + padding(Round(trajectorypitch,1),2,1,false) + "° ".
-	local hud_stage is "Stage: " + currentstagenum + "/" + MaxStages.
-	local hud_staging is "-------".								
-	local hud_var1 is "Aero: " + padding(Round(ship:q,2),1,2,false).
-	local hud_var2 is "Mode:  " + mode.
-	local hud_twr is "TWR:  " + padding(Round(max(twr(),0),2),1,2,false).
-	local hud_apo is "Apo:  000s ".
-	local hud_fuel is "Fuel: " + padding(0,3,0,false) + "s".
-	local hud_azimuth is "Head:  " + padding(Round(launchazimuth,1),2,1,false) + "°".
+	local hud_head is "Head:  " + padding(Round(launchazimuth,1),2,1,false) + "°".
+	local hud_fuel is "Fuel:  ----- ".
+	local hud_twr is "TWR:   " + padding(Round(max(twr(),0),2),1,2,false).
 	
-	if runmode > -1 {
-		if eta:apoapsis < eta:periapsis {
-			if eta:apoapsis < 998 {
-				set hud_apo to "Apo:  " + padding(round(eta:apoapsis),3,0,false) + "s ".
-			} else {
-				set hud_apo to "Apo:  " + padding(floor(eta:apoapsis/60),3,0,false) + "m ".
-			}
+
+	if tminus < 10 or runmode > 0 {
+		set hud_dV to " dV: " + padding(Round(StageDV()),2,0,false) + "m/s ".
+		if vehicleConfig = 1 {
+			set hud_fuel to "Fuel:  " + padding(min(999,Round(remainingburnSRB())),3,0,false) + "s ".
 		} else {
-			if eta:periapsis < 998 {
-				set hud_apo to "Peri: " + padding(round(eta:periapsis),3,0,false) + "s ".
-			} else {
-				set hud_apo to "Peri: " + padding(floor(eta:periapsis/60),3,0,false) + "m ".
-			}
+			set hud_fuel to "Fuel:  " + padding(min(999,Round(remainingburn())),3,0,false) + "s ".
 		}
-		if mode = 0 {
-			local f is RemainingBurn().
-			set hud_fuel to "Fuel: " + padding(min(999,Round(f)),3,0,false) + "s".
-			if f > 999 {
-				set hud_fuel to "Fuel: 999s".
-			}
-		} else {
-			set hud_fuel to "Fuel: " + padding(min(999,Round(remainingBurnSRB())),3,0,false) + "s".
-		}
+	}
+	if eta:apoapsis > 998 {
+		set hud_apo_eta to "eta: " + padding(floor(eta:apoapsis/60),3,0,false) + "m  ".
+	}
+	if eta:periapsis > 998 {
+		set hud_peri_eta to "eta: " + padding(floor(eta:periapsis/60),3,0,false) + "m  ".
 	}
 	If staginginprogress or ImpendingStaging {
 		set hud_staging to "Staging".
 	} 
-	if ship:apoapsis > body:atm:height and currentstagenum > 1 and (Time:seconds - stagefinishtime) >= 5 {
-		if LEO = true {
-			if threeBurn = true {
-				set hud_var1 to "Circ: " + padding(Round(BurnDv(targetapoapsis)+ABS(circDVTargetPeri(targetapoapsis))),2,0,false) + "m/s ".
-			} else {
-				set hud_var1 to "Circ: " + padding(Round(ABS(circDVPeri)),2,0,false) + "m/s ".
-			}
+	if LEO = true {
+		if threeBurn = true {
+			set hud_dV_req to "Req: " + padding(Round(BurnApoapsis_TargetPeriapsis(targetapoapsis)+ABS(circulariseDV_TargetPeriapsis(targetapoapsis,targetperiapsis))),2,0,false) + "m/s ".
 		} else {
-			set hud_var1 to "Circ: " + padding(Round(CircDVApo()),2,0,false) + "m/s ".
+			set hud_dV_req to "Req: " + padding(Round(ABS(circulariseDV_Periapsis)),2,0,false) + "m/s ".
 		}
-		set hud_var2 to "dV: " + padding(Round(StageDV(PayloadProtection)),2,0,false) + "m/s ".
-		set hud_azimuth to "Inc: " + padding(Round(ship:orbit:inclination,5),1,5,false) + "°".
-		set hud_pitch to "Ecc: " + padding(Round(ship:orbit:eccentricity,5),1,5,false).
+	}
+	if ship:apoapsis < ship:body:atm:height {
+		set hud_dV_req to "Req: ------- ".
+	}
+	if runmode > 2 {
+		set hud_pitch to "Pitch: " + padding(Round(pitch_for_vector(ship:facing:forevector),1),2,1,false) + "° ".
+		set hud_head to "Head:  " + padding(Round(heading_for_vector(ship:facing:forevector),1),2,1,false) + "°".
 	}
 
-	local hud_printlist is list(hud_met,hud_pitch,hud_stage,hud_staging,hud_var1,hud_var2,hud_twr,hud_apo,hud_fuel,hud_azimuth).
-	local hud_printlocx is list(00,01,29,23,15,29,15,41,41,01).
-	local hud_printlocy is list(04,41,42,40,41,41,42,41,42,42).
-	
+	local hud_printlist is list(hud_met,hud_staging,hud_apo,hud_apo_eta,hud_peri,hud_peri_eta,hud_ecc,hud_inc,hud_dV,hud_dV_req,hud_pitch,hud_head,hud_fuel,hud_twr).
+	local hud_printlocX is list(00,23,01,01,01,01,19,19,19,19,35,35,35,35).
+	local hud_printlocY is list(04,40,41,42,43,44,41,42,43,44,41,42,43,44).
 	local printLine is 0.
 	until printLine = hud_printlist:length {
         print hud_printlist[printLine] at (hud_printlocx[printLine],hud_printlocy[printLine]).
@@ -253,26 +243,27 @@ Function AscentHUD {
 
 // GUI for unexpected issues during countdown
 Function scrubGUI {
-	Parameter scrubreason.
-	Parameter runmode.
+	Parameter cdownHoldReason.
 	
-	local isDone is false.
+	local userInput is false.
 	local proceedMode is 0.
 	local gui is gui(290).
 	local scrubInfo is "Unknown Scrub Reason".
 	local scrubInfoCont is "".
 	
-	if scrubreason = "MFT Detect Issue" {
+	if cdownHoldReason = "MFT Detect Issue" {
 		set scrubInfo to "CLS has failed to gather necessary info about the vehicles fuel type, mass & capacity. CLS will not function as intended without this information. Continue at your own risk!".
-	} else if scrubreason = "Subnominal Staging Detected" {
+	} else if cdownHoldReason = "Subnominal Staging Detected" {
 		set scrubInfo to "Something is wrong with vehicle staging order. Staging requirements are as follows:".
 		set scrubInfoCont to "• Initial launch engines must be placed into stage 1.  • SRBs (if present) must be placed into stage 2.       • Launch clamps must be placed into stage 3 (if the rocket has SRBs) or stage 2 (if the rocket has no SRBs).".
-	} else if  scrubreason = "AG10 Advisory" {
+	} else if  cdownHoldReason = "AG10 Advisory" {
 		set scrubInfo to "There is nothing in action group 10. AG10 is reserved for fairing jettison".
-	} else if scrubreason = "Crew Abort Procedure Error" {
+	} else if cdownHoldReason = "Crew Abort Procedure Error" {
 		set scrubInfo to "CLS has detected crew onboard, but nothing in the abort action group".
-	} else if scrubreason = "Insufficient Power" {
+	} else if cdownHoldReason = "Insufficient Power" {
 		set scrubInfo to "Vehicle electric charge is below 40%".
+	} else if cdownHoldReason = "No launch clamps detected" {
+		set scrubInfo to "CLS cannot detect any launch clamps. Scrub advised".
 	}.
 	
 	//Label 0
@@ -281,7 +272,7 @@ Function scrubGUI {
 	set label0:style:hstretch to true. // fill horizontally
 	
 	//Label 1
-	local label1 is gui:addLabel(scrubreason).
+	local label1 is gui:addLabel(cdownHoldReason).
 	set label1:style:fontsize to 16.
 	set label1:style:align to "center".
 	set label1:style:hstretch to true. // fill horizontally
@@ -311,15 +302,15 @@ Function scrubGUI {
 	label3:hide().
 	
 	set continue:onclick to {
-		set isDone to true.
+		set userInput to true.
 		set proceedMode to 1.
 	}.
 	set recycle:onclick to {
-		set isDone to true.
+		set userInput to true.
 		set proceedMode to 2.
 	}.
 	set scrub:onclick to {
-		set isDone to true.
+		set userInput to true.
 		set proceedMode to 3.
 	}.
 	set explain:onclick to {
@@ -327,7 +318,7 @@ Function scrubGUI {
 		if label3:text:length > 0 { label3:show(). }
 	}.
 	gui:show().
-	wait until isDone.
+	wait until userInput.
 	gui:hide().
 	return proceedMode.
 }.

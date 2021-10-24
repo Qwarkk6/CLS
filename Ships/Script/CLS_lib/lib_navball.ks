@@ -14,7 +14,7 @@ function east_for {
 }
 
 //Finds current compass heading 
-function compass_for {
+function heading_for {
   local pointing is ship:facing:forevector.
   local east is east_for().
   local trig_x is vdot(ship:north:vector, pointing).

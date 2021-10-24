@@ -9,37 +9,40 @@ Function adtg {
 	return(constant:g*body:mass)/(body:radius+ship:altitude)^2.
 }
 	
-// calculates twr based on mode
+// calculates twr based on vehicleConfig
 Function twr {
 	local throt is min(throttle,1).
 	local g is adtg().
-	local t is partlistavthrust(aelist)+0.01.
-	local st is 0.
+	local thrust is PartlistAvailableThrust(aelist)+0.01.
+	local srbThrust is 0.
 	
-	if mode = 1 {
-		set st to partlistCurThrust(SRBs)+0.01.
+	if vehicleConfig = 1 {
+		set srbThrust to PartlistCurrentThrust(SRBs)+0.01.
 	}
-	return (throt*t+st)/(ship:mass*g).
+	return (throt*thrust+srbThrust)/(ship:mass*g).
 }
 	
 // calculates maximum twr if all engines were at max thrust
 Function maxtwr {
-	local t is ship:availablethrust+0.1.
+	local thrust is ship:availablethrust+0.01.
 	local g is adtg().
-	return t/(ship:mass*g).
+	return thrust/(ship:mass*g).
 }
 	
-// calculates throttle required to achieve a given TWR based on mode
+// calculates throttle required to achieve a given TWR based on vehicleConfig
 Function twrthrottle {
 	parameter targetTWR.
 	local g is adtg().
-	if mode = 0 {
-		local t is ship:availablethrust+0.1.
-		global twrThrot is (ship:mass*g)/t*targetTWR.
+	if vehicleConfig = 0 {
+		local engThrust is ship:availablethrust+0.1.
+		global twrThrot is (ship:mass*g)/thrust*targetTWR.
 	} else {
-		local t is partlistavthrust(aelist).
-		local tC is PartlistCurThrust(SRBs).
-		global twrThrot is (ship:mass*g*targetTWR-tC)/t.
+		local engThrust is PartlistAvailableThrust(aelist).
+		local srbThrust is PartlistCurrentThrust(SRBs).
+		if runmode = 0 {
+			set srbThrust to PartlistPotentialThrust(asrblist).
+		}
+		global twrThrot is (ship:mass*g*targetTWR-srbThrust)/engThrust.
 	}
 	return Max(0.01,Min(1,twrThrot)).
 }
@@ -48,8 +51,8 @@ Function twrthrottle {
 Function srbsepthrottle {
 	parameter targetTWR.
 	local g is adtg().
-	local t is partlistavthrust(aelist).
-	local m is Partlistmass(SRBs).
-	local sepThrot is ((ship:mass-m)*g)/t*targetTWR.
+	local engThrust is PartlistAvailableThrust(aelist).
+	local srbMass is PartlistMass(SRBs).
+	local sepThrot is ((ship:mass-srbMass)*g)/engThrust*targetTWR.
 	return Max(0.01,Min(1,sepThrot)).
 }

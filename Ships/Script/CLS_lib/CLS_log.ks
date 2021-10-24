@@ -4,30 +4,34 @@
 
 // Creates new log file for flight data
 Function logInitialise {
-	parameter apo.
-	parameter inc.
-	local logcount is 0.
-	local y is (time:year):tostring().
-	local d is (time:day):tostring().
-	local h is (time:hour):tostring().
-	local m is (time:minute):tostring().
-	local n is ship:name.
-	local logname is "Y"+y+"."+"D"+d+"_"+h+"."+m+"_"+n.
-	until not exists(path("0:/CLS_lib/logs/" + logname + " (" + logcount + ").csv")) {
-		set logcount to logcount + 1.
+	parameter apoapsis.
+	parameter periapsis.
+	parameter inclination.
+	local year is (time:year):tostring().
+	local day is (time:day):tostring().
+	local hour is (time:hour):tostring().
+	local minute is (time:minute):tostring().
+	local vesselName is ship:name.
+	local realTime is realWorldTime():tostring().
+	if hour:length < 2 {
+		set hour to "0" + hour.
 	}
-	global logpath is path("0:/CLS_lib/logs/" + logname + " (" + logcount + ").csv").
-	global pmt is 0.
-	Log ("Apoapsis,"+(apo/1000)+"km"+" ,Inc,"+round(inc,2)) to logPath.
+	if minute:length < 2 {
+		set minute to "0" + minute.
+	}
+	local logname is "Y"+year+"_"+"D"+day+"_"+hour+"."+minute+"_"+vesselName+"_"+realTime.
+	global logpath is path("0:/CLS_lib/logs/" + logname + ".csv").
+	global missionTimeLog is 0.
+	Log ("Apoapsis,"+(apoapsis/1000)+"km"+" Periapsis,"+(periapsis/1000)+"km"+" ,Inc,"+round(inclination,2)) to logPath.
 	Log (" ") to logPath. 
-	Log ("MET,Mode,dV,TWR,Throttle,Pitch,Q,Alt,Apoapsis,Eta:apo,Periapsis,Stage,Staging,Runmode,Parts") to logPath.
+	Log ("MET,vehicleConfig,dV,TWR,Throttle,Pitch,Q,Alt,Apoapsis,Eta:apo,Periapsis,Stage,Staging,Runmode,Parts,Peri Circ,Apo Circ,3burn Circ,Est Rem dV") to logPath.
 }
 
 // example use - log_data(LIST(newTime,newAlt,newVel:MAG,newDynamicP,dragForce,newAtmPressure,atmDencity*1000,dragCoef,thermalMassIsh,atmTemp,mach),logPath).
 // Logs data from list to log file specified
 function log_data {
-	Parameter mt,logData,logpth.
-	if mt > pmt {
+	Parameter missiontime,logData,logpath.
+	if missiontime > missionTimeLog {
 		local logString is "".
 		For data in logData {
 			if (data):typename() = "String" or (data):typename() = "Boolean" {
@@ -37,7 +41,7 @@ function log_data {
 			}
 		}
 		logString:remove((logString:length - 1),1).
-		Log logString TO logpth.
-		set pmt to missiontime+0.5.
+		Log logString TO logpath.
+		set missionTimeLog to missiontime+0.5.
 	}
 }

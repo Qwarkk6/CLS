@@ -3,18 +3,18 @@
 // Lic. CC-BY-SA-4.0 
 
 //Opens a GUI to input chosen launch parameters in a much more user friendly way than parameters.
-Function launchParam {	
+Function launchParameters {	
 	
 	//Initialise
-	local isDone is false.
-	local Finalised is false.
+	local userInput is false.
+	local confirmed is false.
 	local gui is gui(350).
-	local fInput is list().
+	local output is list().
 	local inputError is false.
 	local warning is false.
 	local warningCount is 0.
-	global maxApo is body:atm:height*7.
-	global launchLoc is ship:geoposition.							// Records liftoff geo-location for downrange distance calc
+	global maxApoapsis is body:atm:height*7.
+	global launchLocation is ship:geoposition.							// Records liftoff geo-location for downrange distance calc
 	
 	//Title
 	local Title is gui:addLabel("CLS Parameters").
@@ -116,7 +116,7 @@ Function launchParam {
 	
 	//Confirm
 	local confirm is gui:addbutton("Confirm Settings").
-	set confirm:onclick to { set isDone to true.}.
+	set confirm:onclick to { set userInput to true.}.
 	
 	//Error Readout
 	local lineh4 is gui:addvlayout().
@@ -139,17 +139,19 @@ Function launchParam {
 	gui:show().
 	
 	//Loop
-	until finalised {
-		until isDone {
+	until confirmed {
+		until userInput {				
 			//Apoapsis
 			if tApoButton1:pressed {
 				lineh1:show().
 				if tApoInput:text:length > 0 {
 					global tApo is tApoInput:text:tonumber()*1000.
+					global tPeri is tApoInput:text:tonumber()*1000.
 				}
 			} else {
 				lineh1:hide().
-				global tApo is maxApo.
+				global tApo is maxApoapsis.
+				global tPeri is maxApoapsis.
 			}
 			
 			//Inclination
@@ -208,24 +210,41 @@ Function launchParam {
 		}
 		//Warnings
 		//Apoapsis Warning
-		if tApoButton1:pressed and tApo <= body:atm:height*1.5 {
-			set warning to true.
-			set warn2:text to "Target apoapsis is below recommended altitude. Results may vary.".
-		} 
-		
-		//Error Checking
-		//Apoapsis 
 		if tApoButton1:pressed {
-			if tApo < body:atm:height {
-				set inputError to true.
-				set Error2:text to "Target apoapsis is below the atmosphere".
-			} else if tApo > maxApo {
-				set inputError to true.
-				set Error2:text to "Target apoapsis is above the maximum rating for CLS".
-			}
+			if tApo <= body:atm:height*1.43 {
+				set warning to true.
+				set warn2:text to "Target apoapsis is below recommended altitude. Results may vary.".
+			} 
 		} 
+
+		//Apoapsisi & Periapsis switch
+		if tperi > tApo {
+			local temp is tApo.
+			set tApo to tPeri.
+			set tPeri to temp.
+		}
+
+		//Error Checking		
+		//Periapsis 
+		if tPeri < body:atm:height {
+			set inputError to true.
+			set Error2:text to "Target periapsis is below the atmosphere".
+		} else if tPeri > maxApoapsis {
+			set inputError to true.
+			set Error2:text to "Target periapsis is above the maximum rating for CLS".
+		}
+			
+		//Apoapsis 
+		if tApo < body:atm:height {
+			set inputError to true.
+			set Error2:text to "Target apoapsis is below the atmosphere".
+		} else if tApo > maxApoapsis {
+			set inputError to true.
+			set Error2:text to "Target apoapsis is above the maximum rating for CLS".
+		}
+			
 		//Inclination
-		if ABS(tInc) < Floor(ABS(launchLoc:lat)) or ABS(tInc) > 180 - Ceiling(ABS(launchLoc:lat)) {
+		if ABS(tInc) < Floor(ABS(launchLocation:lat)) or ABS(tInc) > 180 - Ceiling(ABS(launchLocation:lat)) {
 			set inputError to true.
 			set Error2:text to "Target Inclination impossible to achieve".
 		}
@@ -251,28 +270,28 @@ Function launchParam {
 		//Loop or Finalise
 		if inputError = true {
 			lineh4:show().
-			set isDone to false.
+			set userInput to false.
 			set inputError to false.
 		} else if warning = true and warningCount < 1 {
 			lineh4:hide().
 			lineh5:show().
 			set warningCount to warningCount+1.
-			set isDone to false.
+			set userInput to false.
 			set warning to false.
 		} else {
 			lineh4:hide().
-			set finalised to true.
+			set confirmed to true.
 			
 			//Final data collection of inoutted values
-			fInput:add(tApo).       //[0] Target Apoapsis
-			fInput:add(tInc).  	 	//[1] Target Inclination
-			fInput:add(tWindow).    //[2] Launch Window
-			fInput:add(tMStages).   //[3] Max Stages
-			fInput:add(tDataLog).   //[4] Data Logging
+			output:add(tApo).       //[0] Target Apoapsis
+			output:add(tPeri).		//[1] Target Periapsis
+			output:add(tInc).  	 	//[2] Target Inclination
+			output:add(tWindow).    //[3] Launch Window
+			output:add(tMStages).   //[4] Max Stages
+			output:add(tDataLog).   //[5] Data Logging
 			
 			gui:hide().
-			print fInput.
-			return fInput.
+			return output.
 		}
 		wait 0.001.
 	}
