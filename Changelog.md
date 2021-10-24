@@ -5,19 +5,56 @@ Changelog
 
 Abort
 
-- The abort procedure included in v1.3.0 relied upon another script (ChuteDescent.ks) which I completely forgot to upload. Apologies!
+- The abort procedure included in CLS v1.3.0 relied upon another script (ChuteDescent.ks) which I completely forgot to upload. Apologies!
 - ChuteDescent handles chute deploy on the aborted capsules descent. I split it into it's own script as it can also be used for a capsule re-entering the atmosphere.
 <br>
 
 Minor Changes
 
-- I use the HullCam mod, and CLS now has a system of excluding hullcam parts from its staging checks and part counts.
-- CLS can now detect the presence of fuel cells on the vehicle and will activate it if EC is below 25%.
+- Improved CLS logic for detecting incorrect staging where SRBs are incorrectly placed in first stage.
+- CLS now has a system of excluding hullcam parts from its staging checks and part counts.
+- CLS can now detect the presence of fuel cells on the vehicle and will activate them automatically if EC is below 25%.
 - I can't spell separation/separated/separate it seems. Corrected the spelling (thank you jefferyharrell)
-- Added a readout to show with runmode the script is in. It shows next to the Mission Elapsed Time on the HUD.
 - Added a check to confirm engines are throttling correctly at T-0. I found that the script was aborting some launches when it didn't need to due to throttle 'lag'.
-- The ship will hold pitch a for a few seconds after staging to ensure the next stage is totally clear of the previous stage before pitching.
+- The ship will hold pitch a for 3 seconds after staging to ensure the next stage is clear of the previous stage before pitching.
 - Staging will now occur when SRBs are below 25% thrust, not 20% (for SRBs with thrust curves).
+- More accurate launch throttle calculations and ascent throttling when using SRBs with thrust curves.
+- Warp limit increased during coast phases. The script will also reduce the warp level progressively approaching a burn.
+- CLS will now hold the launch if launch clamps aren't detected and suggest a scrub (Thanks go to Tacombel for highlighting this issue)
+- Staging at ascent completion has been adjusted to make it smoother and less chaotic.
+- Removed throttle down when approaching target apoapsis.
+- General script writing tweaks
+- Ascent profile is more aggressive resulting in improved efficiency.
+- CLS now checks if the circularising engine has an unlocked gimbal before using it for attitude control if the vessel isn't correctly orientated for circularisation burn. Also only throttles to 0.1twr rather than 10% thrust (which may have been overkill for upper stages with high thrust engines)
+- Pretty extensive renaming of variables and functions so that their names indicate what they do.
+- CLS logs are now named with the real world time of launch.
+<br>
+
+EC Consumption 
+
+- Complete review of the script in an attempt to reduce the amount of electrical charge CLS requires to run.
+- 33% reduction in EC consumption during launch and ascent.
+- 50% reduction in EC consumption during coast due to CLS now entering a 'low-power' mode.
+- CLS will now also put all control parts into hibernation mode during the coast phase.
+<br>
+
+HUD
+
+- Complete redesign of the bottom HUD elements.
+- During pre-launch, if a scrub/hold occurs there is now a 'More info' button which will explain the cause of the hold to assist you in solving the issue and successfully recycling the launch sequence.
+- Added a readout to show which runmode the script is in next to the Mission Elapsed Time on the HUD.
+- The fuel readout has been updated. It used engine fuel flow to calculate remaining fuel - accurate when the engines are burning, but inaccurate during coast phases when fuel flow is 0. So now it will show remaining fuel if engines were to burn at 100% thrust while in coast phases.
+- Time to apoapsis/periapsis readout now shifts over to show minutes when it would exceed 999 seconds.
+- CLS will now detect precise moment of Max Q rather than a time frame in which it happens.
+- CLS now gathers more information for the HUD during pre-launch.
+<br>
+
+dV changes on Orbit
+
+- The concern here is that boil-off or use of fuel cells will reduce the vehicles remaining dV which means it will not be able to complete circularisation burns.
+- CLS accounts for this by ensuring the vehicle has around a 5% dV margin for upcoming burns. 
+- 1.4.0 adds a fail safe so that if boil-off or fuel cell usage has reduced the vehicle's dV to below a burn's dV requirement, it will not cause script failure. This is done by recalculating vehicle dV just before a burn and amending the maneuever node's properties if necessary.
+- In these scenarios, the final orbit achieved by CLS will not be circular.
 <br>
 
 Achieving Orbit
@@ -26,7 +63,7 @@ Achieving Orbit
 - Previous versions of CLS were very basic in that the vehicle would burn until apoapsis reached a target orbit altitude, cut-off its engines and then burn at apoapsis to circularise the orbit. This presented issues with low orbit altitudes just outside the karman line or situations where it left the upper stages with unrealistic circularisation burns.
 - Now, the script has multiple methods of circularising:
     1. As before, circularising at apoapsis.
-    2. First burn is longer and cuts when periapsis reaches the target orbit altitude. Then at periapsis, the vehicle burns retrograde to achieve a circular orbit.
+    2. First burn is longer and stops when periapsis reaches the target orbit altitude. Then at periapsis, the vehicle burns retrograde to achieve a circular orbit.
     3. Same approach as number 2, but the script sees the apoapsis is getting extremely large, so it cuts the engine, burns at apoapsis to raise the periapsis to target orbit, and then burns retrograde at periapsis to circualrise the orbit.
 - The script continuously monitors multiple data streams to determine which approach is best.
 - This is most definitely a beta feature. I need to do hours of testing before I'm happy with it and there will be tweaks made to the code along the way - any feedback about it would be much appreciated.
