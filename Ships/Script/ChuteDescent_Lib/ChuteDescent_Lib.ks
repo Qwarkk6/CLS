@@ -1,7 +1,7 @@
 //kOS terminal readouts
-function HUD {
+function chuteHUD {
 	Print "Re-entry Procedure" at (0,0).
-	Print "Status: " + shipStat + "                    " at (0,1).
+	Print "Status: " + shipStatus + "                    " at (0,1).
 	Print "RCS: " + padding(rcsFuel,2,1,false) + "% | EC: " +  padding(EC,2,1,false) + "%   " at (0,2).
 	Print "------------------" at (0,3).
 	Print "Dynamic Pressure: " + padding(shipDynamicPressure,5,1,false) + "Pa   " at (0,4).
@@ -39,7 +39,7 @@ function Calculations {
 }
 
 //Resource monitoring
-function ResourceTracker {	
+function chuteResourceTracker {	
 	For res in ship:resources {
 		If res:Name = "ElectricCharge" {
 			set EC to (Res:Amount/Res:Capacity)*100.
