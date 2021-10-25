@@ -222,15 +222,17 @@ Function PartlistAvailableThrust {
 	Parameter plist.
 	local thrust is 0.01.
 	For e in plist {
-		if e:getmodule("moduleEnginesFX"):allfields:join(","):contains("% rated thrust") {
-			local thrustCurve is e:getmodule("moduleEnginesFX"):getfield("% rated thrust").
-			if thrustCurve > 1 {
-				set thrust to thrust + e:availablethrust*thrustCurve.
+		for idx in range(0,e:modules:length) {
+			if e:getmodule(e:modules[idx]):allfields:join(","):contains("% rated thrust") {
+				local thrustCurve is e:getmodule(e:modules[idx]):getfield("% rated thrust").
+				if thrustCurve > 1 {
+					set thrust to thrust + e:availablethrust*thrustCurve.
+				} else {
+					set thrust to thrust + e:availablethrust.
+				}
 			} else {
 				set thrust to thrust + e:availablethrust.
 			}
-		} else {
-			set thrust to thrust + e:availablethrust.
 		}
 	}
 	return thrust.
@@ -251,15 +253,17 @@ Function PartlistPotentialThrust {
 	Parameter plist.
 	local thrust is 0.01.
 	For e in plist {
-		if e:getmodule("moduleEnginesFX"):allfields:join(","):contains("% rated thrust") {
-			local thrustCurve is e:getmodule("moduleEnginesFX"):getfield("% rated thrust").
-			if thrustCurve > 1 {
-				set thrust to thrust + e:possiblethrust*thrustCurve.
+		for idx in range(0,e:modules:length) {
+			if e:getmodule(e:modules[idx]):allfields:join(","):contains("% rated thrust") {
+				local thrustCurve is e:getmodule(e:modules[idx]):getfield("% rated thrust").
+				if thrustCurve > 1 {
+					set thrust to thrust + e:possiblethrust*thrustCurve.
+				} else {
+					set thrust to thrust + e:possiblethrust.
+				}
 			} else {
 				set thrust to thrust + e:possiblethrust.
 			}
-		} else {
-			set thrust to thrust + e:possiblethrust.
 		}
 	}
 	return thrust.
