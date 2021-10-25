@@ -3,7 +3,7 @@ CLS (Common Launch Script)
 
 An auto-launch script that handles everything from pre-launch through ascent to a final circular orbit for any desired apoapsis and inclination.
 
-Also includes a bundled Abort script which maintains steering control and terminal readouts during an abort. Script terminates once the vehicle begins to fall.
+Also includes a bundled Abort and Chute descent script which maintains steering control and terminal readouts during an abort and safe landing under parachutes.
 
 <b>Dependencies</b>
 
