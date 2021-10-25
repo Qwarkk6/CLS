@@ -76,7 +76,7 @@ Function remainingBurnSRB {
 	For tank in asrblist {
 		For res in tank:resources {
 			if res:name = SolidFuelName and res:enabled = true {
-				set fuelRemaining to (fuelrem + res:amount).
+				set fuelRemaining to (fuelRemaining + res:amount).
 			}
 		}
 	}

@@ -257,7 +257,7 @@ Function launchParameters {
 			set inputError to true.
 			set Error2:text to "Time input requires positive numbers".
 		}
-		if tWindowInput2a:text:tonumber() > 5 or tWindowInput2a:text:tonumber() > 59 or tWindowInput2a:text:tonumber() > 59 {
+		if tWindowInput2a:text:tonumber() > 23 or tWindowInput2a:text:tonumber() > 59 or tWindowInput2a:text:tonumber() > 59 {
 			set inputError to true.
 			set Error2:text to "Incorrect time detected".
 		}		

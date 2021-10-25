@@ -132,7 +132,7 @@ Function eventLog {
 	If missiontime >= logTime {
 		//Downrange calculations
 		local v1 is ship:geoposition:position - ship:body:position.
-		local v2 is launchLoc:position - ship:body:position.
+		local v2 is launchLocation:position - ship:body:position.
 		local downRangeDistance is vang(v1,v2) * constant:degtorad * ship:body:radius.
 		
 		scrollPrint("Speed: "+FLOOR(Ship:AIRSPEED*3.6) + "km/h").
@@ -152,7 +152,7 @@ Function HUDinit {
 	
 	Print Ship:name + " Launch Sequence Initialised" at (0,0).
 	Print "Target Launch Time: NET " + T_O_D(launchtime) at (0,1).
-	if targetapoapsis = maxApo {
+	if targetapoapsis = maxApoapsis {
 		Print "Target Parking Orbit: Highest Possible" at (0,2).
 	} else {
 		Print "Target Parking Orbit: " + Ceiling(targetapoapsis/1000,2) + "km x " + Ceiling(targetperiapsis/1000,2) + "km" at (0,2).

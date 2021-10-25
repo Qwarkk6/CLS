@@ -13,13 +13,13 @@ Function adtg {
 Function twr {
 	local throt is min(throttle,1).
 	local g is adtg().
-	local thrust is PartlistAvailableThrust(aelist)+0.01.
+	local engThrust is PartlistAvailableThrust(aelist)+0.01.
 	local srbThrust is 0.
 	
 	if vehicleConfig = 1 {
 		set srbThrust to PartlistCurrentThrust(SRBs)+0.01.
 	}
-	return (throt*thrust+srbThrust)/(ship:mass*g).
+	return (throt*engThrust+srbThrust)/(ship:mass*g).
 }
 	
 // calculates maximum twr if all engines were at max thrust
@@ -35,7 +35,7 @@ Function twrthrottle {
 	local g is adtg().
 	if vehicleConfig = 0 {
 		local engThrust is ship:availablethrust+0.1.
-		global twrThrot is (ship:mass*g)/thrust*targetTWR.
+		global twrThrot is (ship:mass*g)/engThrust*targetTWR.
 	} else {
 		local engThrust is PartlistAvailableThrust(aelist).
 		local srbThrust is PartlistCurrentThrust(SRBs).

@@ -198,7 +198,7 @@ Function GimbalDetect {
 
 // Detects whether staging has ignited Ullage motors.
 Function detectUllage {
-	global UllageDetected is false.
+	//global UllageDetected is false.
 	EngineList().
 	For e in elist {
 		if e:ignition = true and e:thrust > 0.01 and e:allowshutdown = false and e:resources:length > 0 {
