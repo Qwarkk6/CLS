@@ -1,6 +1,11 @@
 Changelog
 ==========================
 
+<b>v1.4.1 (25/10/21)</b>
+
+- Fixed a potential issue for parts without moduleEngineFX when calculating thrust.
+<br>
+
 <b>v1.4.0 (25/10/21)</b>
 
 Abort
