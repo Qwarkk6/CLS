@@ -12,7 +12,7 @@ Function EngineFlameout {
 }
 
 //Resource monitoring
-function ReourceTracker {	
+function abortReourceTracker {	
 	list resources in resList.
 	For res in reslist {
 		If res:Name = "ElectricCharge" {
@@ -25,9 +25,9 @@ function ReourceTracker {
 } 
 
 //kOS terminal readouts
-function HUD {
+function abortHUD {
 	Print "Abort Procedure          " at (0,0).
-	Print "Status: " + status + "                    " at (0,1).
+	Print "Status: " + shipStatus + "                    " at (0,1).
 	Print "RCS: " + padding(rcsFuel,2,1,false) + "% | EC: " +  padding(EC,2,1,false) + "%   " at (0,2).
 	Print "------------------" at (0,3).
 }
@@ -41,7 +41,7 @@ runpath("0:/cls_lib/lib_navball.ks").
 runpath("0:/cls_lib/CLS_nav.ks").
 
 //HUD setup
-set status to "Abort Burn".
+set shipStatus to "Abort Burn".
 
 //Steering setup
 //System of slowing pitching and yawing away from original steering atitude to ensure aborted capsule is clear of previous stages
@@ -55,10 +55,10 @@ lock steering to R(pitch+turnRate,yaw+turnRate,roll).
 wait until ship:verticalspeed > 1.
 
 until ship:verticalspeed < 0 or pitch_for_vector(ship:srfprograde:forevector) < 10 {
-	ReourceTracker(). HUD().
+	abortReourceTracker(). abortHUD().
 	
-	if EngineFlameout() and status = "Abort Burn" {
-		set status to "Coasting".
+	if EngineFlameout() and shipStatus = "Abort Burn" {
+		set shipStatus to "Coasting".
 	}
 }
 runpath("0:/ChuteDescent.ks").
