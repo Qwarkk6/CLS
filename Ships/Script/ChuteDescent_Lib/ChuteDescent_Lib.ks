@@ -4,7 +4,7 @@ function chuteHUD {
 	Print "Status: " + shipStatus + "                    " at (0,1).
 	Print "RCS: " + padding(rcsFuel,2,1,false) + "% | EC: " +  padding(EC,2,1,false) + "%   " at (0,2).
 	Print "------------------" at (0,3).
-	Print "Dynamic Pressure: " + padding(shipDynamicPressure,5,1,false) + "Pa   " at (0,4).
+	Print "Dynamic Pressure: " + padding(ship:Q*constant:atmtokpa*1000,5,1,false) + "Pa   " at (0,4).
 	Print "Drogue Max-Q: " + padding(drogueMaxQ,5,1,false) + "Pa   " at (0,5).
 	Print "Chute Max-Q: " + padding(chuteMaxQ,5,1,false) + "Pa   " at (0,6).
 	Print "------------------" at (0,7).
@@ -25,7 +25,6 @@ function chuteHUD {
 
 //Main calculations
 function Calculations {
-	set shipDynamicPressure to ship:Q * constant:atmtokpa * 1000.
 	if ship:altitude < body:atm:height and ship:verticalspeed < 0 {
 		set descentSpeed to ship:velocity:surface:mag.
 		set descentTime to time:seconds - entrytime.
