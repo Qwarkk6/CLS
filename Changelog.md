@@ -66,8 +66,6 @@ Achieving Orbit
     2. First burn is longer and stops when periapsis reaches the target orbit altitude. Then at periapsis, the vehicle burns retrograde to achieve a circular orbit.
     3. Same approach as number 2, but the script sees the apoapsis is getting extremely large, so it cuts the engine, burns at apoapsis to raise the periapsis to target orbit, and then burns retrograde at periapsis to circualrise the orbit.
 - The script continuously monitors multiple data streams to determine which approach is best.
-- This is most definitely a beta feature. I need to do hours of testing before I'm happy with it and there will be tweaks made to the code along the way - any feedback about it would be much appreciated.
-<br>
 
 <b>v1.3.0 (10/06/21)</b>
 
