@@ -158,6 +158,7 @@ set PayloadProtection to false.																// Tracks if the vehicle is using
 set PayloadProtectionStage to 0.															// Tracks stage of PayloadProtection (eg fairings). Used to determine if fairings must be jettisoned prior to staging (eg Atlas 5m Configurations)
 set PayloadProtectionConfig to "-".															// Tracks type of payload protection (eg fairings or LES)
 set FuelCellActive to False.																// Tracks status of on board fuel cells
+set manualAbort to false.																	// Tracks whether manual abort has been triggered
 FuelCellDetect(). PrelaunchEngList().														// Gathers info on initial engines and detects fuel cells. Removes thrustlimits on all engines to hand control over to CLS. 	
 
 // Manuever node / burn variables
@@ -179,7 +180,7 @@ if csvLog {
 Until launchcomplete {
 
 	// Initiate looping functions
-	AscentHUD().						// Initiates the HUD information at the bottom of the terminal.
+	if not abort { AscentHUD().	}		// Initiates the HUD information at the bottom of the terminal.
 	warpControl(runmode).				// Activates warp control function anytime warp speed is manually adjusted
 
 	//Log feature - logs data to the csv file created by LogInitialise()
@@ -326,7 +327,7 @@ Until launchcomplete {
 				scrollprint("Insufficient Thrust",false).
 				set launchcomplete to true.
 			} else {
-				Stage.
+				if launchClampCheck() { stage. }
 				set numparts to Ship:parts:length.
 				scrollprint("Liftoff (" + T_O_D(time:seconds) + ")").
 				set launchThrottle to TWRthrottle(LiftoffTWR).		// Records the throttle needed to achieve the launch TWR. Used to throttle engines during ascent.
@@ -377,7 +378,7 @@ Until launchcomplete {
 	}
 
 	// Ascent trajectory program until reach desired apoapsis	
-	If runmode = 2 {	
+	If runmode = 2 and not abort {	
 		
 		if passedMaxQ = false { maxQ(dynamicPressure). }			// Function for detecting MaxQ
 		Eventlog().										// Initiates mission log readouts in the body of the terminal
@@ -679,19 +680,6 @@ Until launchcomplete {
 		}
 	}
 
-	// Perform abort if conditions defined in Continuous abort detection logic (below) are met and terminates script
-	If runmode = -666 {
-		lock throttle to 0.
-		set Ship:control:neutralize to true. 
-		sas on.
-		scrollprint("Launch Aborted").
-		Hudtext("Launch Aborted!",5,2,100,red,false).
-		set launchcomplete to true.
-		if Ship:partsingroup("abort"):length > 0 {
-			runpath("0:/Abort.ks").
-		}
-	}
-	
 	// Fairing separation
 	If runmode > 1 and PayloadProtection = true {	
 		// If the fairings need to be jettisoned before stage separation (eg Atlas V 5m configuration)  then the fairings will jettison as soon as staging is imminent
@@ -849,9 +837,27 @@ Until launchcomplete {
 	}
 	
 	//If manual abort is triggered
-	if ABORT = true {
+	if abort {
+		set manualAbort to true.
 		set runmode to -666.
 		scrollprint("Manual Abort").
+	}
+	
+	// Perform abort if conditions defined in Continuous abort detection logic (below) are met and terminates script
+	If runmode = -666 {
+		if not manualAbort {
+			for e in aelist {
+				e:shutdown.
+			}
+		}
+		set Ship:control:neutralize to true. 
+		scrollprint("Launch Aborted").
+		Hudtext("Launch Aborted!",5,2,100,red,false).
+		set launchcomplete to true.
+		if Ship:partsingroup("abort"):length > 0 {
+			runpath("0:/Abort.ks").
+		}
+		break.
 	}
 	
 	//Handles Activation and Deactivation of Fuel cells
@@ -869,7 +875,7 @@ unlock all.
 sas on. rcs off.
 
 // End of the program
-If launchcomplete {
+If launchcomplete and not runmode = -666 {
 	wait 10.
 	if hasnode { remove cnode. }
 	scrollprint("Program Completed").

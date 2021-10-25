@@ -11,6 +11,20 @@ Function EngineFlameout {
 	}
 }
 
+//Checks for thrust indicating succesful abort motor ignition
+Function thrustCheck {
+	list engines in engList.
+	local check is false.
+	For e in engList {
+		If e:ignition and not e:flameout {
+			if e:thrust > 0 and e:fuelflow > 0 {
+				set check to true.
+			}
+		}
+	}
+	return check.
+}
+
 //Resource monitoring
 function abortReourceTracker {	
 	list resources in resList.
@@ -35,7 +49,7 @@ function abortHUD {
 //Initialise
 clearscreen.
 RCS on. SAS off.
-abort on.
+abort on. lock throttle to 1.
 runpath("0:/cls_lib/lib_num_to_formatted_str.ks").
 runpath("0:/cls_lib/lib_navball.ks").
 runpath("0:/cls_lib/CLS_nav.ks").
@@ -52,13 +66,14 @@ set entrytime to time:seconds.
 lock turnRate to (time:seconds - entrytime)*3.
 lock steering to R(pitch+turnRate,yaw+turnRate,roll).
 
-wait until ship:verticalspeed > 1.
+wait until thrustCheck().
 
-until ship:verticalspeed < 0 or pitch_for_vector(ship:srfprograde:forevector) < 10 {
+until EngineFlameout() and ship:verticalspeed < 0 or EngineFlameout() and pitch_for_vector(ship:srfprograde:forevector) < 10 {
 	abortReourceTracker(). abortHUD().
 	
 	if EngineFlameout() and shipStatus = "Abort Burn" {
 		set shipStatus to "Coasting".
+		lock steering to ship:srfprograde.
 	}
 }
 runpath("0:/ChuteDescent.ks").
