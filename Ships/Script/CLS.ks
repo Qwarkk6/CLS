@@ -158,7 +158,7 @@ set PayloadProtection to false.																// Tracks if the vehicle is using
 set PayloadProtectionStage to 0.															// Tracks stage of PayloadProtection (eg fairings). Used to determine if fairings must be jettisoned prior to staging (eg Atlas 5m Configurations)
 set PayloadProtectionConfig to "-".															// Tracks type of payload protection (eg fairings or LES)
 set FuelCellActive to False.																// Tracks status of on board fuel cells
-FuelCellDetect().																			// Gathers info on initial engines and detects fuel cells. Removes thrustlimits on all engines to hand control over to CLS. 	
+FuelCellDetect(). PrelaunchEngList().														// Gathers info on initial engines and detects fuel cells. Removes thrustlimits on all engines to hand control over to CLS. 	
 
 // Manuever node / burn variables
 set burnStartTime to Time:seconds+100000.													// Determines time at which manuever burn should start. 
@@ -574,7 +574,7 @@ Until launchcomplete {
 					if eta:apoapsis < eta:periapsis {
 						set cnode to node(time:seconds + eta:apoapsis, 0, 0, BurnPeriapsis_TargetApoapsis(targetperiapsis)).
 					} else {
-						set cnode to node(time:seconds + eta:periapsis, 0, 0, BurnApoapsis_TargetPeriapsisApo(targetapoapsis)).
+						set cnode to node(time:seconds + eta:periapsis, 0, 0, BurnApoapsis_TargetPeriapsis(targetapoapsis)).
 					}
 				} else {
 					//If apoapsis is closer to target
@@ -767,7 +767,7 @@ Until launchcomplete {
 				SRBDetect(ship:parts).
 				SolidFuel().
 			}
-			if TWRthrottle(maxAscentTWR) <= 1 {
+			if TWRthrottle(maxAscentTWR) < 1 {
 				lock throttle to TWRthrottle(maxAscentTWR).
 				scrollprint("Maintaining TWR").
 			} else {
