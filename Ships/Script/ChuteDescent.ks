@@ -13,6 +13,7 @@ set chuteMaxQ to 20000.
 set drogueMaxQ to 30000.
 set dynamicPressure to 99999999.
 set dynamicPressureTime to 0.
+//lock shipDynamicPressure to ship:Q * constant:atmtokpa * 1000.
 
 //HUD Initialisation
 print "Awaiting Free-fall" at (0,0).
@@ -21,8 +22,8 @@ set chuteStatus to "-".
 set drogueStatus to "-".
 set fuelCellStatus to "Inactive".
 
-//Detect if ship has pad aborted
-if alt:radar < 5000 {
+//Detect if ship has aborted
+if alt:radar < ship:body:atm:height/2 {
 	set abortMode to true.
 } else {
 	set abortMode to false.
@@ -58,13 +59,15 @@ when scriptStatus = "Running" then {
 
 wait until ship:altitude < body:atm:height and ship:verticalspeed < 0. 
 set entryTime to time:seconds.
-wait until dynamicPressureTracker(dynamicPressure) = false.
-wait until dynamicPressureTracker(dynamicPressure) = true or abortMode = true.
+if not abortMode {
+	wait until dynamicPressureTracker(dynamicPressure) = false.
+	wait until dynamicPressureTracker(dynamicPressure) = true.
+}
 
 //Drogue Deploy
 if stockDrogueList:length > 0 or sstuChuteList:length > 0 {
 	set shipStatus to "Awaiting Drogue Deploy".
-	wait until Body:atm:altitudepressure(ship:altitude) > 0.02 and shipDynamicPressure < drogueMaxQ.
+	wait until Body:atm:altitudepressure(ship:altitude) > 0.02 and ship:Q*constant:atmtokpa*1000 < drogueMaxQ.
 	if sstuChuteList:length > 0 {
 		for p in sstuChuteList {
 			p:getmodule("SSTUModularParachute"):setfield("drogue deploy alt",ship:altitude+1000).
@@ -87,9 +90,10 @@ if stockDrogueList:length > 0 or sstuChuteList:length > 0 {
 
 //Descent under Drogues - will advance to mains early if it thinks drogues are deployed, dynamic pressure is still rising and its close to unsafe mains threshold
 if runmode = 1 {
+	set shipStatus to "Drogue chutes Deployed".
 	wait until Body:atm:altitudepressure(ship:altitude) > 0.04 and alt:radar < 4500.
 	until alt:radar < 1050 {
-		if shipDynamicPressure*1.1 > chuteMaxQ and dynamicPressureTracker(dynamicPressure) = false {
+		if (ship:Q*constant:atmtokpa*1000)*1.1 > chuteMaxQ and dynamicPressureTracker(dynamicPressure) = false {
 			set runmode to 2.
 		}
 	}
@@ -100,7 +104,7 @@ if runmode = 1 {
 if runmode = 2 {
 	if stockChuteList:length > 0 {
 		set shipStatus to "Awaiting Chute Deploy".
-		wait until Body:atm:altitudepressure(ship:altitude) > 0.04 and shipDynamicPressure < chuteMaxQ.
+		wait until Body:atm:altitudepressure(ship:altitude) > 0.04 and ship:Q*constant:atmtokpa*1000 < chuteMaxQ.
 		for p in stockChuteList {
 			p:getmodule("ModuleParachute"):doaction("deploy chute",true).
 		}
