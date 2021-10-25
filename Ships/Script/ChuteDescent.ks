@@ -3,6 +3,7 @@ clearscreen.
 runpath("0:/cls_lib/lib_num_to_formatted_str.ks").
 runpath("0:/ChuteDescent_Lib/ChuteDescent_Lib.ks").
 runpath("0:/cls_lib/lib_navball.ks").
+runpath("0:/cls_lib/CLS_nav.ks").
 SAS off. RCS on. Brakes on.
 lock steering to ship:srfretrograde.
 set scriptStatus to "Running".
@@ -51,7 +52,7 @@ for p in ship:parts {
 }
 
 when scriptStatus = "Running" then {
-	ResourceTracker(). Calculations(). HUD().
+	chuteResourceTracker(). Calculations(). chuteHUD().
 	return true.
 }
 
