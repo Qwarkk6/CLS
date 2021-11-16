@@ -46,7 +46,7 @@
 //////////////////////////////////////////////////////////////////////
 
 //Runs GUI for user to input launch parameters
-runpath("0:/cls_lib/CLS_parameters.ks").
+runpath("0:/CLS_lib/CLS_parameters.ks").
 clearscreen. print "Define Launch Parameters" at (0,0).
 set launchParameters to launchParameters().
 
@@ -77,7 +77,7 @@ set crewCount to ship:crew():length.
 //////////////////////////////////////////////////////////////////////
 
 // Initiate settings
-clearscreen. unlock all. sas off. rcs off.
+clearscreen. unlock all. sas off. rcs off. on sas { sas off. return true. }
 set Ship:control:pilotmainthrottle to 0.
 set terminal:width to 52. set terminal:height to 45.
 set config:ipu to 800. set config:stat to false.
@@ -86,18 +86,18 @@ set config:ipu to 800. set config:stat to false.
 set SteeringManager:RollTS to 5.						// Reduces oversensitive roll correction during ascent
 
 // Script Library
-runpath("0:/cls_lib/CLS_dv.ks"). 
-runpath("0:/cls_lib/CLS_gen.ks").
-runpath("0:/cls_lib/CLS_hud.ks").
-runpath("0:/cls_lib/CLS_nav.ks").
-runpath("0:/cls_lib/CLS_res.ks").
-runpath("0:/cls_lib/CLS_twr.ks").
-runpath("0:/cls_lib/CLS_ves.ks").
-runpath("0:/cls_lib/lib_instaz.ks").
-runpath("0:/cls_lib/lib_lazcalc.ks").
-runpath("0:/cls_lib/lib_navball.ks").
-runpath("0:/cls_lib/lib_num_to_formatted_str.ks").
-runpath("0:/cls_lib/CLS_log.ks").
+runpath("0:/CLS_lib/CLS_dv.ks"). 
+runpath("0:/CLS_lib/CLS_gen.ks").
+runpath("0:/CLS_lib/CLS_hud.ks").
+runpath("0:/CLS_lib/CLS_nav.ks").
+runpath("0:/CLS_lib/CLS_res.ks").
+runpath("0:/CLS_lib/CLS_twr.ks").
+runpath("0:/CLS_lib/CLS_ves.ks").
+runpath("0:/CLS_lib/lib_instaz.ks").
+runpath("0:/CLS_lib/lib_lazcalc.ks").
+runpath("0:/CLS_lib/lib_navball.ks").
+runpath("0:/CLS_lib/lib_num_to_formatted_str.ks").
+runpath("0:/CLS_lib/CLS_log.ks").
 
 // Orbit Variables
 set atmAlt to ship:body:atm:height+1000.													// +1000 as a safety net

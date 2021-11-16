@@ -50,9 +50,9 @@ function abortHUD {
 clearscreen.
 RCS on. SAS off.
 abort on. lock throttle to 1.
-runpath("0:/cls_lib/lib_num_to_formatted_str.ks").
-runpath("0:/cls_lib/lib_navball.ks").
-runpath("0:/cls_lib/CLS_nav.ks").
+runpath("0:/CLS_lib/lib_num_to_formatted_str.ks").
+runpath("0:/CLS_lib/lib_navball.ks").
+runpath("0:/CLS_lib/CLS_nav.ks").
 
 //HUD setup
 set shipStatus to "Abort Burn".

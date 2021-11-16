@@ -1,19 +1,20 @@
 //Initial script setup
 clearscreen.
-runpath("0:/cls_lib/lib_num_to_formatted_str.ks").
-runpath("0:/ChuteDescent_Lib/ChuteDescent_Lib.ks").
-runpath("0:/cls_lib/lib_navball.ks").
-runpath("0:/cls_lib/CLS_nav.ks").
+runpath("0:/CLS_lib/lib_num_to_formatted_str.ks").
+runpath("0:/ChuteDescent_lib/ChuteDescent_lib.ks").
+runpath("0:/CLS_lib/lib_navball.ks").
+runpath("0:/CLS_lib/CLS_nav.ks").
 SAS off. RCS on. Brakes on.
 lock steering to ship:srfretrograde.
+lock entryTime to time:seconds.
 set scriptStatus to "Running".
+on sas { sas off. preserve. }
 
 //Variables creation
 set chuteMaxQ to 20000.
 set drogueMaxQ to 30000.
 set dynamicPressure to 99999999.
 set dynamicPressureTime to 0.
-//lock shipDynamicPressure to ship:Q * constant:atmtokpa * 1000.
 
 //HUD Initialisation
 print "Awaiting Free-fall" at (0,0).
@@ -68,6 +69,7 @@ if not abortMode {
 if stockDrogueList:length > 0 or sstuChuteList:length > 0 {
 	set shipStatus to "Awaiting Drogue Deploy".
 	wait until Body:atm:altitudepressure(ship:altitude) > 0.02 and ship:Q*constant:atmtokpa*1000 < drogueMaxQ.
+	wait until alt:radar < 10000 or (ship:Q*constant:atmtokpa*1000)*1.1 > drogueMaxQ and dynamicPressureTracker(dynamicPressure) = false.
 	if sstuChuteList:length > 0 {
 		for p in sstuChuteList {
 			p:getmodule("SSTUModularParachute"):setfield("drogue deploy alt",ship:altitude+1000).
@@ -125,7 +127,7 @@ if runmode = 3 {
 				stockDrogueList:remove(0).
 			}
 		}
-		set chuteStatus to "Cut               ".
+		set drogueStatus to "Cut               ".
 	}
 	wait until ship:status = "LANDED" or ship:status = "SPLASHED".
 }
