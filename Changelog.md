@@ -1,6 +1,12 @@
 Changelog
 ==========================
 
+<b>v1.4.2 (16/11/21)</b>
+
+- Changed capitalisation of runpath commands for the benefit of Linux users. Thanks to u/ruiluth and u/jwbrase for the help here. I don't linux so I cannot test this - feedback from linux users would be very much appreciated.
+- Added a command to CLS & abort modes to instantly deactivate SAS if it is activated mid-script. SAS does not play nicely with the steering commands these scripts use.
+<br>
+
 <b>v1.4.1 (25/10/21)</b>
 
 - Fixed a potential issue for parts without moduleEngineFX when calculating thrust.
