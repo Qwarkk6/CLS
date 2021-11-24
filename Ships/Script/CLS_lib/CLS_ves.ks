@@ -42,7 +42,7 @@ Function launchClampCheck {
 	local plist is ship:parts.
 	local clampList is list().
 	For P in plist {
-		if P:hasmodule("launchclamp") {
+		if P:hasmodule("launchclamp") or P:modules:join(","):contains("LaunchClamp"){
 			clampList:add(p).
 		}
 	}
