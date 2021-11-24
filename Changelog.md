@@ -1,6 +1,10 @@
 Changelog
 ==========================
 
+<b>v1.4.3 (24/11/21)</b>
+
+- Adjusted method of detecting launch clamps to increase compatibility with mods that do not use the stock LaunchClamp module. Thanks to u/Astrofoo for this.
+
 <b>v1.4.2 (16/11/21)</b>
 
 - Changed capitalisation of runpath commands for the benefit of Linux users. Thanks to u/ruiluth and u/jwbrase for the help here. I don't linux so I cannot test this - feedback from linux users would be very much appreciated.
