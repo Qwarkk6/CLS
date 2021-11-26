@@ -4,10 +4,12 @@ Changelog
 <b>v1.4.4 (26/11/21)</b>
 
 - Adjusted method of enabling and disabling hibernation mode on probes during coast to improve reliability.
+<br>
 
 <b>v1.4.3 (24/11/21)</b>
 
 - Adjusted method of detecting launch clamps to increase compatibility with mods that do not use the stock LaunchClamp module. Thanks to u/Astrofoo for this.
+<br>
 
 <b>v1.4.2 (16/11/21)</b>
 
