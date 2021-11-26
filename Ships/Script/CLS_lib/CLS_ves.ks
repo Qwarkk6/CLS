@@ -117,7 +117,11 @@ Function FuelCellToggle {
 Function lowPowerMode {
 	for p in ship:parts {
 		if p:hasmodule("ModuleCommand") {
-			p:getmodule("ModuleCommand"):doaction("toggle hibernation",true).
+			if p:getmodule("ModuleCommand"):getfield("hibernation") = true {
+				p:getmodule("ModuleCommand"):setfield("hibernation",false).
+			} else {
+				p:getmodule("ModuleCommand"):setfield("hibernation",true).
+			}
 		}
 	}
 }
