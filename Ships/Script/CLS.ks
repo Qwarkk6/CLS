@@ -159,7 +159,8 @@ set PayloadProtectionStage to 0.															// Tracks stage of PayloadProtect
 set PayloadProtectionConfig to "-".															// Tracks type of payload protection (eg fairings or LES)
 set FuelCellActive to False.																// Tracks status of on board fuel cells
 set manualAbort to false.																	// Tracks whether manual abort has been triggered
-FuelCellDetect(). PrelaunchEngList().														// Gathers info on initial engines and detects fuel cells. Removes thrustlimits on all engines to hand control over to CLS. 	
+FuelCellDetect(). PrelaunchEngList().														// Gathers info on initial engines and detects fuel cells. Removes thrustlimits on all engines to hand control over to CLS. 
+set hibernationEnabled to false.															// Tracks hibernation status	
 
 // Manuever node / burn variables
 set burnStartTime to Time:seconds+100000.													// Determines time at which manuever burn should start. 
@@ -590,9 +591,6 @@ Until launchcomplete {
 				set cnode to node(time:seconds + eta:apoapsis, 0, 0, circulariseDV_Apoapsis()).		
 			}
 			add cnode.
-			set burnStartTime to time:seconds + cnode:eta - nodeBurnStart(cnode).
-			set burnStarted to false.
-			set burnDeltaV to cnode:deltav.
 			set runmode to 4.
 		} else {
 			remove nextnode.
@@ -604,10 +602,21 @@ Until launchcomplete {
 		if currentstagenum = 1 or StageDV() < cnode:deltav:mag and currentstagenum < maxStages {
 			Lock steering to heading(heading_for_vector(Ship:srfprograde:forevector),pitch_for_vector(Ship:srfprograde:forevector),launchroll).
 			RCS on.
-			if vang(steering:vector,ship:facing:vector) < 1 {
+			If PayloadProtection = true {
+				if (Stage:number - PayloadProtectionStage)=1 {
+					set numparts to Ship:parts:length - Ship:partsingroup("AG10"):length.
+					Stage.
+					scrollprint(PayloadProtectionConfig + " Jettisoned").
+					set PayloadProtection to false.
+				}
+			}
+			if vang(steering:vector,ship:facing:vector) < 1 and not staginginprogress {
 				set EngstagingOverride to true.
 			}
 		} else if not EngstagingOverride {
+			set burnStartTime to time:seconds + cnode:eta - nodeBurnStart(cnode).
+			set burnStarted to false.
+			set burnDeltaV to cnode:deltav.
 			if time:seconds < burnStartTime {
 				lock steering to Ship:prograde:forevector.
 				lowPowerMode().								// low power mode for coast
@@ -621,11 +630,12 @@ Until launchcomplete {
 	
 	// Coast phase
 	If runmode = 5 {
-		//if ship:altitude > body:atm:height and time:seconds >= burnStartTime-45 {		// Will take the vehicle out of warp (and prevent further warping) 90 seconds before the circularisation burn is due to start
-		if time:seconds >= burnStartTime-45 {		// Will take the vehicle out of warp (and prevent further warping) 90 seconds before the circularisation burn is due to start			lowPowerMode().								// return to full power mode
+		if time:seconds >= burnStartTime-45 {		// Will take the vehicle out of warp (and prevent further warping) 90 seconds before the circularisation burn is due to start
+			set burnStarted to false.
 			scrollprint("Preparing for Burn").
 			scrollprint("          Delta-v requirement: " + ceiling(cnode:deltav:mag,2) + "m/s",false).
 			scrollprint("          Burn time: " + hud_missionTime(nodeBurnTime()),false).
+			lowPowerMode().							// return to full power mode
 			rcs on.
 			
 			//dV check in case boil-off losses could result in incomplete burn
@@ -681,7 +691,7 @@ Until launchcomplete {
 	}
 
 	// Fairing separation
-	If runmode > 1 and PayloadProtection = true {	
+	If runmode = 2 and PayloadProtection = true {	
 		// If the fairings need to be jettisoned before stage separation (eg Atlas V 5m configuration)  then the fairings will jettison as soon as staging is imminent
 		If (Stage:number - PayloadProtectionStage)=1 and runmode = 2 and ImpendingStaging {
 			set numparts to Ship:parts:length - Ship:partsingroup("AG10"):length.
