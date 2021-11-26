@@ -119,10 +119,17 @@ Function lowPowerMode {
 		if p:hasmodule("ModuleCommand") {
 			if p:getmodule("ModuleCommand"):getfield("hibernation") = true {
 				p:getmodule("ModuleCommand"):setfield("hibernation",false).
+				set hibernationEnabled to false.
 			} else {
 				p:getmodule("ModuleCommand"):setfield("hibernation",true).
+				set hibernationEnabled to true.
 			}
 		}
+	}
+	if hibernationEnabled = true {
+		scrollprint("Hibernation mode activated").
+	} else {
+		scrollprint("Hibernation mode deactivated").
 	}
 }
 
