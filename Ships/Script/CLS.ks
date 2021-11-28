@@ -146,6 +146,7 @@ set CentralEnginesThrottle to 0.															// Tracks throttle required durin
 set ApoETAcheck to false.																	// Tracks whether the vehicle's time to apoapsis is suitable for throttle down 			
 set threeBurn to false.																		// Tracks Whether CLS has determined 3 burns is most efficicent to achieve target orbit
 set ascentComplete to false.																// Used to monitor multiple data streams to determine best time to end ascent
+set ascentCompleteTime to time:seconds+100000.												// Tracks time when ascent is completed
 set insufficientDV to false.																// Used to detect insufficient DV to complete ascent 
 
 // Ship information / Variables
@@ -225,7 +226,8 @@ Until launchcomplete {
 		
 		// Staging checks. Holds launch if clamps or decouplers are incorrectly staged, or clamps are not present. See required staging set-up above
 		If cdown >= -14 and tminus = 14 {
-			if launchClampCheck() = false {
+			set launchClamps to launchClampCheck().														// Detects presence of launch clamps
+			if launchClamps = false {
 				set cdownHoldReason to "No launch clamps detected". 
 				set runmode to -1.
 			} else if stagingCheck() =  false {
@@ -289,7 +291,7 @@ Until launchcomplete {
 			stage.
 			Activeenginelist().
 			scrollprint("Ignition").
-			set throttletime to Time:seconds+1.
+			set throttletime to Time:seconds+0.5.
 			lock throttle to min(TWRthrottle(LiftoffTWR),TWRthrottle(LiftoffTWR)*(Time:seconds-throttletime)/2).
 			set tminus to tminus-1.
 		}
@@ -297,7 +299,7 @@ Until launchcomplete {
 		// Checks engines are producing thrust. Terminates script if they arent.
 		If cdown >= -2 and tminus = 2 {
 			if ship:availablethrust > 0.1 {
-				scrollprint("Thrust Verified").
+				scrollprint("T-00:02 - Thrust Verified",false).
 			} else {
 				lock throttle to 0.
 				scrollprint("Launch Aborted").
@@ -328,7 +330,7 @@ Until launchcomplete {
 				scrollprint("Insufficient Thrust",false).
 				set launchcomplete to true.
 			} else {
-				if launchClampCheck() { stage. }
+				if launchClamps { stage. }
 				set numparts to Ship:parts:length.
 				scrollprint("Liftoff (" + T_O_D(time:seconds) + ")").
 				set launchThrottle to TWRthrottle(LiftoffTWR).		// Records the throttle needed to achieve the launch TWR. Used to throttle engines during ascent.
@@ -564,6 +566,7 @@ Until launchcomplete {
 			}
 			scrollprint("          Entering Coast Phase",false).
 			lock throttle to 0.
+			set ascentCompleteTime to time:seconds.
 			set runmode to 3.
 		}
 	}
@@ -602,7 +605,7 @@ Until launchcomplete {
 		if currentstagenum = 1 or StageDV() < cnode:deltav:mag and currentstagenum < maxStages {
 			Lock steering to heading(heading_for_vector(Ship:srfprograde:forevector),pitch_for_vector(Ship:srfprograde:forevector),launchroll).
 			RCS on.
-			If PayloadProtection = true {
+			If PayloadProtection = true and time:seconds > ascentCompleteTime+2.5 {
 				if (Stage:number - PayloadProtectionStage)=1 {
 					set numparts to Ship:parts:length - Ship:partsingroup("AG10"):length.
 					Stage.
@@ -610,7 +613,7 @@ Until launchcomplete {
 					set PayloadProtection to false.
 				}
 			}
-			if vang(steering:vector,ship:facing:vector) < 1 and not staginginprogress {
+			if vang(steering:vector,ship:facing:vector) < 1 and not staginginprogress and time:seconds > ascentCompleteTime+5{
 				set EngstagingOverride to true.
 			}
 		} else if not EngstagingOverride {
@@ -619,7 +622,7 @@ Until launchcomplete {
 			set burnDeltaV to cnode:deltav.
 			if time:seconds < burnStartTime {
 				lock steering to Ship:prograde:forevector.
-				lowPowerMode().								// low power mode for coast
+				lowPowerModeOn().
 				set runmode to 5.
 			} else {
 				rcs on.
@@ -630,12 +633,13 @@ Until launchcomplete {
 	
 	// Coast phase
 	If runmode = 5 {
+		if time:seconds >= burnStartTime-60 and hibernationEnabled = true {
+			lowPowerModeOff().
+		}
 		if time:seconds >= burnStartTime-45 {		// Will take the vehicle out of warp (and prevent further warping) 90 seconds before the circularisation burn is due to start
-			set burnStarted to false.
 			scrollprint("Preparing for Burn").
 			scrollprint("          Delta-v requirement: " + ceiling(cnode:deltav:mag,2) + "m/s",false).
 			scrollprint("          Burn time: " + hud_missionTime(nodeBurnTime()),false).
-			lowPowerMode().							// return to full power mode
 			rcs on.
 			
 			//dV check in case boil-off losses could result in incomplete burn
@@ -880,14 +884,8 @@ Until launchcomplete {
 wait 0.01.
 }
 
-// Main loop end
-unlock all.
-sas on. rcs off.
-
 // End of the program
-If launchcomplete and not runmode = -666 {
-	wait 10.
-	if hasnode { remove cnode. }
-	scrollprint("Program Completed").
-	Print "                                              " at (0,0).
-} 
+unlock all. sas on. rcs off.
+if hasnode { remove cnode. }
+scrollprint("Program Completed").
+Print "                                              " at (0,0).
