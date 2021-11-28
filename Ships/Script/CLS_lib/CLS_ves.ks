@@ -113,23 +113,27 @@ Function FuelCellToggle {
 	}
 }
 
-//Toggles Control Part hibernation
-Function lowPowerMode {
+//Turns Control Part hibernation on
+Function lowPowerModeOn {
 	for p in ship:parts {
 		if p:hasmodule("ModuleCommand") {
-			if p:getmodule("ModuleCommand"):getfield("hibernation") = true {
-				p:getmodule("ModuleCommand"):setfield("hibernation",false).
-				set hibernationEnabled to false.
-			} else {
-				p:getmodule("ModuleCommand"):setfield("hibernation",true).
+			if p:getmodule("ModuleCommand"):hasaction("toggle hibernation") {
+				p:getmodule("ModuleCommand"):doaction("toggle hibernation",true).
 				set hibernationEnabled to true.
 			}
 		}
 	}
-	if hibernationEnabled = true {
-		scrollprint("Hibernation mode activated").
-	} else {
-		scrollprint("Hibernation mode deactivated").
+}
+
+//Turns Control Part hibernation off
+Function lowPowerModeOff {
+	for p in ship:parts {
+		if p:hasmodule("ModuleCommand") {
+			if p:getmodule("ModuleCommand"):hasaction("toggle hibernation") {
+				p:getmodule("ModuleCommand"):doaction("toggle hibernation",false).
+				set hibernationEnabled to false.
+			}
+		}
 	}
 }
 
