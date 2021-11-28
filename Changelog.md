@@ -1,6 +1,12 @@
 Changelog
 ==========================
 
+<b>v1.4.5 (28/11/21)</b>
+
+- Another change to hibernation mode - this time it has a check to ensure the parts have the necessary module actions to use hibernation mode, and wont enable it if they don't.
+- Tidy up of staging that occurs if target orbit is achieved via first stage alone.
+<br>
+
 <b>v1.4.4 (26/11/21)</b>
 
 - Adjusted method of enabling and disabling hibernation mode on probes during coast to improve reliability.
