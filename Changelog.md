@@ -1,6 +1,16 @@
 Changelog
 ==========================
 
+<b>v1.4.6 (14/01/22)</b>
+
+- Ship will now throttle down as its apoapsis  approaches the target to ensure better orbit accuracy. Note: there are conditions under which this will not happen.
+- Altered the way CLS detects thrust curves for SRBs. The old method was more accurate but the performance hit was huge. The new method is less accurate but much more compatible and performs much faster.
+- Moved to my own method of fine tuning inclination. The old method was math heavy, difficult to tweak and there was a specific condition under which it would mistakenly force a launch abort. As a result <b>lib_instaz.ks is now obsolete and should be deleted.</b>
+- The new method of tweaking inclination is way more simple, and compares inclination with target inclination and adjusts the heading accordingly. No complex math.
+- SRBs will now jettison when thrust curves dip below 20% instead of 25%.
+- The HUD readout for throttling down the upper stage now doesn't occur until the vehicle has a high enough twr for throttling to be necessary.
+<br>
+
 <b>v1.4.5 (28/11/21)</b>
 
 - Another change to hibernation mode - this time it has a check to ensure the parts have the necessary module actions to use hibernation mode, and wont enable it if they don't.
