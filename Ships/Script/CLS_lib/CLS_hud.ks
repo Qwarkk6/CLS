@@ -10,14 +10,14 @@ Function scrollprint {
 	Parameter nextprint.
 	Parameter timeStamp is true.
 	local maxlinestoprint is 33.	// Max number of lines in scrolling print list
-	local t_minus is "T" + hud_missionTime(cdown).
-	local t_plus is "T" + hud_missionTime(missiontime).
-
+	
 	if timeStamp = true {
 		if runmode = 0 {
-			printlist:add(t_minus + " - " + nextprint).
+			local t_minus is "T" + hud_missionTime(cdown) + " - ".
+			printlist:add(t_minus + nextprint).
 		} else {
-			printlist:add(t_plus + " - " + nextprint).
+			local t_plus is "T" + hud_missionTime(missiontime) + " - ".
+			printlist:add(t_plus + nextprint).
 		}
 	} else {
 		printlist:add(nextprint).
@@ -44,7 +44,7 @@ Function scrollprint {
 Function t_o_d {
 	parameter time.
 	
-	local hoursPerDay is round(body:rotationperiod).
+	local hoursPerDay is round(body:rotationperiod/3600).
 	local dd is floor(time/(hoursPerDay*3600)).  
 	local hh is floor((time-hoursPerDay*3600*dd)/3600).  
 	local mm is floor((time-3600*hh-hoursPerDay*3600*dd)/60).  

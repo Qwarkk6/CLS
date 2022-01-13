@@ -28,7 +28,7 @@ Function maxtwr {
 	local g is adtg().
 	return thrust/(ship:mass*g).
 }
-	
+
 // calculates throttle required to achieve a given TWR based on vehicleConfig
 Function twrthrottle {
 	parameter targetTWR.
@@ -38,8 +38,8 @@ Function twrthrottle {
 		global twrThrot is (ship:mass*g)/engThrust*targetTWR.
 	} else {
 		local engThrust is PartlistAvailableThrust(aelist).
-		local srbThrust is PartlistCurrentThrust(SRBs).
-		if runmode = 0 {
+		local srbThrust is PartlistCurrentThrust(asrblist).
+		if runmode = 0 and tminus > 0 {
 			set srbThrust to PartlistPotentialThrust(asrblist).
 		}
 		global twrThrot is (ship:mass*g*targetTWR-srbThrust)/engThrust.

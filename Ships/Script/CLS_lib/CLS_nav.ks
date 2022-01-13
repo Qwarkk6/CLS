@@ -48,35 +48,46 @@ function heading_for_vector {
 // Credit to TheGreatFez for this function. I have modified it slightly to limit angle of attack during high dynamic pressure
 function PitchProgram_Sqrt {
 	parameter stageNumber is 1.
-	global turnend is body:atm:height*1.2.
+	parameter baseApogee is 0.
 	
-	if stageNumber = 1 and eta:apoapsis > 180 and eta:apoapsis < eta:periapsis {
-		global pitch_ang is 90 - max(5,min(90,90*sqrt(ship:apoapsis/turnend))).
-	} else if stageNumber > 1 and eta:apoapsis > 90 and eta:apoapsis < eta:periapsis {
-		global pitch_ang is 90 - max(5,min(90,90*sqrt(ship:apoapsis/turnend))).
-	} else {
-		global pitch_ang is 90 - max(5,min(85,90*sqrt(ship:apoapsis/turnend))).
-	}
-	if ship:q > 0.4 or missiontime < 90  {
-		global maxQsteer is max(0,10-ship:q*15).
-	} else {
-		global maxQsteer is max(0,15-ship:q*15).
-	}
+	local turnend is body:atm:height*1.15.
+	local currentApogee is (ship:apoapsis-BaseApogee)+480.
+	local pitch_ang is 90 - max(5,min(90,85*sqrt(currentApogee/turnend))).
+	local maxQsteer is max(0,15-ship:q*15).
 	local pitch_max is pitch_for_vector(Ship:srfprograde:forevector)+maxQsteer.
 	local pitch_min is pitch_for_vector(Ship:srfprograde:forevector)-maxQsteer.
+	local pitchOutput is max(min(pitch_ang,pitch_max),pitch_min).
 	
 	//Pitches into kerbin when apoapsis is higher than target apoapsis to more efficienctly raise periapsis
 	if ship:apoapsis > targetapoapsis and ship:altitude > atmAlt {
-		if pitch_ang = 0 and stageNumber > 1 {
+		if pitch_ang = 0 {
 			if eta:apoapsis < eta:periapsis {
-				return max(min(pitch_ang,pitch_max),pitch_min)-6.
+				set pitchOutput to max(min(pitch_ang,pitch_max),pitch_min)-6.
 			} else {
-				return max(min(pitch_ang,pitch_max),pitch_min)+6.
+				set pitchOutput to max(min(pitch_ang,pitch_max),pitch_min)+6.
 			}
-		} else {
-			return max(min(pitch_ang,pitch_max),pitch_min).
 		}
-	} else {
-		return max(min(pitch_ang,pitch_max),pitch_min).
 	}
+	return pitchOutput.
+}
+
+//Fine tunes inclination
+Function incTune {
+	Parameter desiredInc.
+	local output is 0.
+	
+	local inc is ship:orbit:inclination.
+	local heading is heading_for_vector(ship:prograde:vector).
+	
+	if desiredInc < 0 {
+		set output to heading+(sqrt(abs(desiredInc)-inc)*4).
+	} else {	
+		set output to heading-(sqrt(abs(desiredInc)-inc)*4).
+	}
+	
+	if output < 0 { 
+		return 360 + output.
+	} else {
+		return output.
+	}	
 }

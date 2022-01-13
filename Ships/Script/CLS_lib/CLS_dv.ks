@@ -39,7 +39,7 @@ Function stageDV {
 
 // calulates remaining burn time for current fuel load
 Function remainingBurn {
-	local fuelRemaining is FuelRemaining(stagetanks,ResourceOne) + + FuelRemaining(stagetanks,ResourceTwo).
+	local fuelRemaining is FuelRemaining(stagetanks,ResourceOne) + FuelRemaining(stagetanks,ResourceTwo).
 	local fuelFlow is 0.01.
 	local engList is aelist:copy().
 	

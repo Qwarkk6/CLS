@@ -244,7 +244,7 @@ Function launchParameters {
 		}
 			
 		//Inclination
-		if ABS(tInc) < Floor(ABS(launchLocation:lat)) or ABS(tInc) > 180 - Ceiling(ABS(launchLocation:lat)) {
+		if ABS(tInc) < Floor(ABS(launchLocation:lat)) or ABS(tInc) > 181 - Ceiling(ABS(launchLocation:lat)) {
 			set inputError to true.
 			set Error2:text to "Target Inclination impossible to achieve".
 		}
