@@ -1,7 +1,7 @@
 This script uses and distributes lib_navball.ks, lib_lazcalc.ks and lib_num_to_formatted_str.ks from the KSLib.
 Both are Copyright © 2015,2017,2019 KSLib team and licensed under MIT.
 KSLib:	https://github.com/KSP-KOS/KSLib
-MIT License:	<a href="https://opensource.org/licenses/MIT"</a>
+MIT License:	<a href="https://opensource.org/licenses/MIT"></a>
 
 CLS is based on /u/only_to_downvote / mileshatem's launchtoCirc script.
 Some of his orignal code is in CLS.
