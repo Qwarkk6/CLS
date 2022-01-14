@@ -46,6 +46,7 @@
 //////////////////////////////////////////////////////////////////////
 
 //Runs GUI for user to input launch parameters
+runpath("0:/CLS_lib/CLS_window.ks").
 runpath("0:/CLS_lib/CLS_parameters.ks").
 clearscreen. print "Define Launch Parameters" at (0,0).
 set launchParameters to launchParameters().
@@ -194,7 +195,6 @@ Until launchcomplete {
 	// Countdown
 	// Countdown function handles the 'empty' countdown seconds. Below are pre-launch checks. They produce terminal readouts written for a sense of realism. 
 	If runmode = 0 {
-		//set cdown to Time:seconds - launchtime.		// Calculates time to launch. Used to ensure pre-launch events happen at specific times.set cdown to Time:seconds - launchtime.		// Calculates time to launch. Used to ensure pre-launch events happen at specific times.
 		Countdown(tminus,cdown).					// Displays the countdown on the terminal
 		
 		if cdown < -20 {
