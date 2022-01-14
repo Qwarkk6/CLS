@@ -208,10 +208,10 @@ Function AscentHUD {
 		}
 	}
 	if eta:apoapsis > 998 {
-		set hud_apo_eta to "eta: " + padding(floor(eta:apoapsis/60),3,0,false) + "m  ".
+		set hud_apo_eta to "eta: " + padding(floor(eta:apoapsis/60),3,0,false) + "m    ".
 	}
 	if eta:periapsis > 998 {
-		set hud_peri_eta to "eta: " + padding(floor(eta:periapsis/60),3,0,false) + "m  ".
+		set hud_peri_eta to "eta: " + padding(floor(eta:periapsis/60),3,0,false) + "m    ".
 	}
 	If staginginprogress or ImpendingStaging {
 		set hud_staging to "Staging".

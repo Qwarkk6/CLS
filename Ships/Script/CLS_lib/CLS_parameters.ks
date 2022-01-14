@@ -43,22 +43,27 @@ Function launchParameters {
 	
 	//Inclination
 	local line2 is gui:ADDHLAYOUT().
-	local tIncLabel is line2:addLabel("Desired Inclination (degrees)").
+	local tIncLabel is line2:addLabel("Desired Inclination (°)").
 	local tIncInput is line2:addtextfield("0").
-	set tIncInput:style:width to 40.
+	set tIncInput:style:width to 60.
 	
 	//Launch window
 	local line3 is gui:ADDHLAYOUT().
 	local tWindowLabel1 is line3:addLabel("Launch Window").
 	local tWindowButton1 is line3:addbutton("Time").
 	local tWindowButton2 is line3:addbutton("tMinus").
+	local tWindowButton3 is line3:addbutton("Instantaneous").
+	tWindowButton3:hide().
 	set tWindowButton2:pressed to true.
 	set tWindowButton1:toggle to  true.
 	set tWindowButton2:toggle to  true.
+	set tWindowButton3:toggle to  true.
 	set tWindowButton1:exclusive to  true.
 	set tWindowButton2:exclusive to  true.
+	set tWindowButton3:exclusive to  true.
 	set tWindowButton1:style:width to 50.	
 	set tWindowButton2:style:width to 50.	
+	set tWindowButton3:style:width to 95.	
 	
 	//Launch Window Input
 	local line4 is gui:ADDHLAYOUT().
@@ -80,6 +85,13 @@ Function launchParameters {
 	set tWindowInputSepb:style:width to 4.
 	set tWindowInput2c:style:width to 31.
 	lineh2:hide().
+	
+	//Launch Window Input
+	local lineh6 is gui:ADDHLAYOUT().
+	local tWindowLabel4 is lineh6:addLabel("Longitude of Ascending Node (°)").
+	local tWindowInput3a is lineh6:addtextfield("").
+	set tWindowInput3a:style:width to 40.
+	lineh6:hide().
 	
 	//Max Stages
 	local line5 is gui:ADDHLAYOUT().
@@ -165,19 +177,34 @@ Function launchParameters {
 					global tInc is tIncInput:text:tonumber().
 				}
 			}
+			if tInc < 0 or tInc > 0 {
+				tWindowButton3:show().
+			} else {
+				tWindowButton3:hide().
+				set tWindowButton1:pressed to true.
+			}				
 			
 			//Launch Window
 			if tWindowButton1:pressed { 
 				line4:hide().
+				lineh6:hide().
 				lineh2:show().
 				if tWindowInput2a:text:length > 0 and tWindowInput2b:text:length > 0 and tWindowInput2c:text:length > 0 {
 					global tWindow is tWindowInput2a:text + ":" + tWindowInput2b:text + ":" + tWindowInput2c:text.
 				}
-			} else {
+			} else if tWindowButton2:pressed {
 				line4:show().
+				lineh6:hide().
 				lineh2:hide().
 				if tWindowInput1:text:length > 0 {
 					global tWindow is tWindowInput1:text:tonumber().
+				}
+			} else {
+				lineh6:show().
+				lineh2:hide().
+				line4:hide().
+				if tWindowInput3a:text:length > 0 {
+					global tWindow is launchWindow(tInc,tWindowInput3a:text:tonumber())-(time:seconds+30).
 				}
 			}
 			
@@ -260,8 +287,11 @@ Function launchParameters {
 		if tWindowInput2a:text:tonumber() > 23 or tWindowInput2a:text:tonumber() > 59 or tWindowInput2a:text:tonumber() > 59 {
 			set inputError to true.
 			set Error2:text to "Incorrect time detected".
-		}		
-		//Max Stages
+		}
+		if tWindowInput3a:text:tonumber() < 0 or tWindowInput3a:text:tonumber() > 360 {
+			set inputError to true.
+			set Error2:text to "Longitude of Ascending Node must be between 0° and 360°".
+		}
 		if tMStages < 1 {
 			set inputError to true.
 			set Error2:text to "Must have at least 1 stage".

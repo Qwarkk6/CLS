@@ -11,9 +11,15 @@ Function warpControl {
 	local warpLimit is list(0,0,0,1,1,1,0,1,0,1).
 	
 	// At pre-launch if liftoff time is over a minute away
-	If runmode = 0 and time:seconds - launchtime < -60 {
-		if warp > 3 {
-			set warp to 3.
+	If runmode = 0 {
+		if time:seconds - launchtime < -120 {
+			if warp > 3 {
+				set warp to 3.
+			}
+		} else {
+			if warp > 0 {
+				set warp to 0.
+			}
 		}
 	//During staging
 	} else if staginginprogress or ImpendingStaging {
