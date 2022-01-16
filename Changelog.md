@@ -7,12 +7,13 @@ Changelog
 - Altered the way CLS detects thrust curves for SRBs. The old method was more accurate but the performance hit was huge. The new method is less accurate but much more compatible and performs much faster.
 - Moved to my own method of fine tuning inclination. The old method was math heavy, difficult to tweak and there was a specific condition under which it would mistakenly force a launch abort. As a result <b>lib_instaz.ks is now obsolete and should be deleted.</b>
 - The new method of tweaking inclination is way more simple, and compares inclination with target inclination and adjusts the heading accordingly. No complex math.
-- SRBs will now jettison when thrust curves dip below 20% instead of 25%.
+- SRBs will now jettison when thrust curves dip below 15% instead of 25%.
 - The HUD readout for throttling down the upper stage now doesn't occur until the vehicle has a high enough twr for throttling to be necessary.
 - Default liftoffTWR changed to 1.4 for better ship design compatibility following some feedback.
 - Steering tweak to avoid a 'kick' at the start of the gravity turn.
 - The CLS menu for choosing orbital parameters now has an 'Instantaneous' launch window option. If provided with the inclination & ascending node's longitude, CLS will calculate the instantaneous launch window needed to reach this orbit.
 - New library (CLS_window.ks) included to calculate the instantaneous launch window. Thanks to u/ElWanderer_KSP on reddit and u/Rybec as the library is just a slight tweak to their work from reddit.
+- Fixed an error during orbital insertion where CLS may incorrectly calculate whether to burn at apoapsis or periapsis.
 <br>
 
 <b>v1.4.5 (28/11/21)</b>
