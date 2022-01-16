@@ -45,7 +45,7 @@ Function launchParameters {
 	local line2 is gui:ADDHLAYOUT().
 	local tIncLabel is line2:addLabel("Desired Inclination (°)").
 	local tIncInput is line2:addtextfield("0").
-	set tIncInput:style:width to 60.
+	set tIncInput:style:width to 50.
 	
 	//Launch window
 	local line3 is gui:ADDHLAYOUT().
@@ -90,7 +90,7 @@ Function launchParameters {
 	local lineh6 is gui:ADDHLAYOUT().
 	local tWindowLabel4 is lineh6:addLabel("Longitude of Ascending Node (°)").
 	local tWindowInput3a is lineh6:addtextfield("").
-	set tWindowInput3a:style:width to 40.
+	set tWindowInput3a:style:width to 50.
 	lineh6:hide().
 	
 	//Max Stages
@@ -181,7 +181,7 @@ Function launchParameters {
 				tWindowButton3:show().
 			} else {
 				tWindowButton3:hide().
-				set tWindowButton1:pressed to true.
+				set tWindowButton2:pressed to true.
 			}				
 			
 			//Launch Window
@@ -199,7 +199,7 @@ Function launchParameters {
 				if tWindowInput1:text:length > 0 {
 					global tWindow is tWindowInput1:text:tonumber().
 				}
-			} else {
+			} else if tWindowButton3:pressed {
 				lineh6:show().
 				lineh2:hide().
 				line4:hide().
@@ -288,9 +288,11 @@ Function launchParameters {
 			set inputError to true.
 			set Error2:text to "Incorrect time detected".
 		}
-		if tWindowInput3a:text:tonumber() < 0 or tWindowInput3a:text:tonumber() > 360 {
-			set inputError to true.
-			set Error2:text to "Longitude of Ascending Node must be between 0° and 360°".
+		if tWindowButton3:pressed {
+			if tWindowInput3a:text:tonumber() < 0 or tWindowInput3a:text:tonumber() > 360 {
+				set inputError to true.
+				set Error2:text to "Longitude of Ascending Node must be between 0° and 360°".
+			}
 		}
 		if tMStages < 1 {
 			set inputError to true.

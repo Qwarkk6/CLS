@@ -23,7 +23,7 @@ function launchWindow {
 	}
 }
 
-function orbitnormal
+function orbitNormal
 {
   parameter inc, lan.
   
