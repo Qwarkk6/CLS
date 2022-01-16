@@ -1,6 +1,5 @@
 //Monitors engines for flameout
 Function EngineFlameout {
-	list engines in engList.
 	For e in engList {
 		If e:ignition and not e:flameout {
 			return false.
@@ -49,6 +48,7 @@ function abortHUD {
 //Initialise
 clearscreen.
 RCS on. SAS off.
+list engines in engList.
 abort on. lock throttle to 1.
 runpath("0:/CLS_lib/lib_num_to_formatted_str.ks").
 runpath("0:/CLS_lib/lib_navball.ks").

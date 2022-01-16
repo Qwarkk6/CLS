@@ -142,10 +142,12 @@ set launchThrottle to 1.																	// Launch throttle to achieve liftoff T
 set gravityTurnApogee to 0.																	// Tracks ship apoapsis at the beginning of gravity turn to avoid a 'kick'
 set throttletime to 0.																		// Tracks time of engine throttling. Used for gradual throttling.
 set currentthrottle to 0.																	// Tracks initial throttle during engine throttle up or down
+set currentThrottle2 to 0.																	// Second iteration of current throttle for apopsis fine tuning.
 set CentralEnginesCalculation to false.														// Tracks central booster throttling for 3 booster lifter configurations
 set CentralEnginesThrottle to 0.															// Tracks throttle required during central engine throttling of 3 booster vehicle configurations
 set ApoETAcheck to false.																	// Tracks the vehicle's time to apoapsis 
-set throttleCheck to false.																	// Tracks whether it is suitable for upper stage to throttle down.		
+set throttleCheck to false.																	// Tracks whether it is suitable for upper stage to throttle down.	
+set approachingApo to false.																// Tracks whether ships apopsis is getting close to the target to begin throttling down for fine apoapsis control	
 set threeBurn to false.																		// Tracks Whether CLS has determined 3 burns is most efficicent to achieve target orbit
 set ascentComplete to false.																// Used to monitor multiple data streams to determine best time to end ascent
 set ascentCompleteTime to time:seconds+100000.												// Tracks time when ascent is completed
@@ -454,8 +456,8 @@ Until launchcomplete {
 			} 
 			
 			If vehicleConfig = 1 {
-				// Detection of SRB going below 20% rated thrust. Tells vehicle to stage.
-				If PartlistCurrentThrust(asrblist)/PartlistAvailableThrust(asrblist)<0.20 {
+				// Detection of SRB going below 15% rated thrust. Tells vehicle to stage.
+				If PartlistCurrentThrust(asrblist)/PartlistAvailableThrust(asrblist)<0.15 {
 					set SRBstagingOverride to true.
 				}
 				
@@ -500,8 +502,14 @@ Until launchcomplete {
 				}
 				//Throttle down approaching target apoapsis
 				if orbitData >= targetapoapsis-sqrt(targetapoapsis)*10 and Eta:apoapsis > 30 {
-					lock throttle to max(TWRthrottle(0.2),TWRthrottle(UpperAscentTWR)*((targetapoapsis-orbitData)/(targetapoapsis-(targetapoapsis-sqrt(targetapoapsis)*10)))).
-				} else if Eta:apoapsis < 75 {					// If time to apoapsis drops below 75 seconds after engines have throttled down, this will throttle them back up
+					if approachingApo = false {
+						set currentThrottle2 to throttle.
+						set approachingApo to true.
+					} else {
+						lock throttle to max(TWRthrottle(0.2),currentThrottle2*((targetapoapsis-orbitData)/(targetapoapsis-(targetapoapsis-sqrt(targetapoapsis)*10)))).
+						
+					}
+				} else if Eta:apoapsis < 75 {						// If time to apoapsis drops below 75 seconds after engines have throttled down, this will throttle them back up
 					set ApoEtacheck to false.
 					lock throttle to TWRthrottle(maxAscentTWR).
 				}
@@ -528,7 +536,7 @@ Until launchcomplete {
 					if ship:apoapsis >= (targetapoapsis-50) {
 						set ascentComplete to true.
 					}
-					if ship:apoapsis >= (targetapoapsis+1000) {
+					if ship:apoapsis >= targetapoapsis+(targetapoapsis*0.05) {
 						set threeBurn to true.
 						set LEO to true.
 					}
@@ -586,9 +594,9 @@ Until launchcomplete {
 			if LEO = true {
 				if threeBurn = true {
 					if eta:apoapsis < eta:periapsis {
-						set cnode to node(time:seconds + eta:apoapsis, 0, 0, BurnPeriapsis_TargetApoapsis(targetperiapsis)).
+						set cnode to node(time:seconds + eta:apoapsis, 0, 0, BurnApoapsis_TargetPeriapsis(targetperiapsis)).
 					} else {
-						set cnode to node(time:seconds + eta:periapsis, 0, 0, BurnApoapsis_TargetPeriapsis(targetapoapsis)).
+						set cnode to node(time:seconds + eta:periapsis, 0, 0, BurnPeriapsis_TargetApoapsis(targetapoapsis)).
 					}
 				} else {
 					//If apoapsis is closer to target
