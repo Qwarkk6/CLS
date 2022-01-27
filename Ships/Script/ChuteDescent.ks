@@ -55,6 +55,9 @@ for p in ship:parts {
 
 when scriptStatus = "Running" then {
 	chuteResourceTracker(). Calculations(). chuteHUD().
+	if warp > 2 {
+		set warp to 2.
+	}
 	return true.
 }
 

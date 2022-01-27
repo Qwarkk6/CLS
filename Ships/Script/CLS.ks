@@ -45,6 +45,11 @@
 //////////////////////////USER CONFIGURATION//////////////////////////
 //////////////////////////////////////////////////////////////////////
 
+//Quicksave
+if KUniverse:canquicksave {
+	KUniverse:quicksaveto(Ship:name + " (Pre-Launch)").
+}
+
 //Runs GUI for user to input launch parameters
 runpath("0:/CLS_lib/CLS_window.ks").
 runpath("0:/CLS_lib/CLS_parameters.ks").
@@ -200,7 +205,7 @@ Until launchcomplete {
 		Countdown(tminus,cdown).					// Displays the countdown on the terminal
 		
 		if cdown < -20 {
-			print "T" + hud_missionTime(cdown) + "   " at (0,(printlist:length)+listlinestart).	// Will display a countdown if terminal input has set a specific launch time
+			print "T" + hud_missionTime(cdown) + launchNode + "   " at (0,(printlist:length)+listlinestart).	// Will display a countdown if terminal input has set a specific launch time
 		} else if tminus = 20 {
 			scrollprint("Startup").
 			set tminus to tminus-1.
@@ -501,13 +506,12 @@ Until launchcomplete {
 					lock throttle to max(TWRthrottle(UpperAscentTWR),((TWRthrottle(UpperAscentTWR) - currentthrottle)*((Time:seconds-throttletime)/5)+currentthrottle)).
 				}
 				//Throttle down approaching target apoapsis
-				if orbitData >= targetapoapsis-sqrt(targetapoapsis)*10 and Eta:apoapsis > 30 {
+				if orbitData >= targetapoapsis*0.95 and Eta:apoapsis > 30 {
 					if approachingApo = false {
 						set currentThrottle2 to throttle.
 						set approachingApo to true.
 					} else {
-						lock throttle to max(TWRthrottle(0.2),currentThrottle2*((targetapoapsis-orbitData)/(targetapoapsis-(targetapoapsis-sqrt(targetapoapsis)*10)))).
-						
+						lock throttle to max(TWRthrottle(0.2),currentThrottle2*((targetapoapsis-orbitData)/(targetapoapsis*0.05))).
 					}
 				} else if Eta:apoapsis < 75 {						// If time to apoapsis drops below 75 seconds after engines have throttled down, this will throttle them back up
 					set ApoEtacheck to false.
@@ -623,11 +627,13 @@ Until launchcomplete {
 			Lock steering to heading(heading_for_vector(Ship:srfprograde:forevector),pitch_for_vector(Ship:srfprograde:forevector),launchroll).
 			RCS on.
 			If PayloadProtection = true and time:seconds > ascentCompleteTime+2.5 {
+				set numparts to Ship:parts:length - Ship:partsingroup("AG10"):length.
+				scrollprint(PayloadProtectionConfig + " Jettisoned").
+				set PayloadProtection to false.
 				if (Stage:number - PayloadProtectionStage)=1 {
-					set numparts to Ship:parts:length - Ship:partsingroup("AG10"):length.
 					Stage.
-					scrollprint(PayloadProtectionConfig + " Jettisoned").
-					set PayloadProtection to false.
+				} else {
+					Toggle Ag10. 
 				}
 			}
 			if vang(steering:vector,ship:facing:vector) < 1 and not staginginprogress and time:seconds > ascentCompleteTime+5{
