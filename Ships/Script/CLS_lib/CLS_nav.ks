@@ -57,17 +57,7 @@ function PitchProgram_Sqrt {
 	local pitch_max is pitch_for_vector(Ship:srfprograde:forevector)+maxQsteer.
 	local pitch_min is pitch_for_vector(Ship:srfprograde:forevector)-maxQsteer.
 	local pitchOutput is max(min(pitch_ang,pitch_max),pitch_min).
-	
-	//Pitches into kerbin when apoapsis is higher than target apoapsis to more efficienctly raise periapsis
-	if ship:apoapsis > targetapoapsis and ship:altitude > atmAlt {
-		if pitch_ang = 0 {
-			if eta:apoapsis < eta:periapsis {
-				set pitchOutput to max(min(pitch_ang,pitch_max),pitch_min)-6.
-			} else {
-				set pitchOutput to max(min(pitch_ang,pitch_max),pitch_min)+6.
-			}
-		}
-	}
+
 	return pitchOutput.
 }
 
@@ -77,12 +67,20 @@ Function incTune {
 	local output is 0.
 	
 	local inc is ship:orbit:inclination.
-	local heading is heading_for_vector(ship:prograde:vector).
+	//local heading is heading_for_vector(ship:prograde:vector).
 	
 	if desiredInc < 0 {
-		set output to heading+(sqrt(abs(desiredInc)-inc)*4).
+		if inc < abs(desiredInc) {
+			set output to heading_for_vector(ship:prograde:vector)+(sqrt(max(abs(desiredInc)-inc,0))*4).
+		} else if inc >= abs(desiredInc) {
+			set output to heading_for_vector(ship:prograde:vector)-(sqrt(max(abs(desiredInc)-inc,0))*4).
+		}
 	} else {	
-		set output to heading-(sqrt(abs(desiredInc)-inc)*4).
+		if inc < desiredInc {
+			set output to heading_for_vector(ship:prograde:vector)-(sqrt(max(abs(desiredInc)-inc,0))*4).
+		} else {
+			set output to heading_for_vector(ship:prograde:vector)+(sqrt(max(abs(desiredInc)-inc,0))*4).
+		}
 	}
 	
 	if output < 0 { 

@@ -13,7 +13,10 @@ Function launchParameters {
 	local inputError is false.
 	local warning is false.
 	local warningCount is 0.
-	global maxApoapsis is body:atm:height*7.
+	local tMin is 0.
+	local tSec is 0.
+	global launchNode is " ".
+	global maxApoapsis is (body:soiradius*0.975)-ship:body:radius.
 	global launchLocation is ship:geoposition.							// Records liftoff geo-location for downrange distance calc
 	
 	//Title
@@ -67,9 +70,15 @@ Function launchParameters {
 	
 	//Launch Window Input
 	local line4 is gui:ADDHLAYOUT().
-	local tWindowLabel2 is line4:addLabel("Time until Launch (seconds)").
-	local tWindowInput1 is line4:addtextfield("23").
-	set tWindowInput1:style:width to 50.
+	local tWindowLabel2 is line4:addLabel("Time until Launch").
+	local tWindowInput1 is line4:addtextfield("0").
+	local tWindowLabel3 is line4:addLabel("Mins").
+	set tWindowLabel3:style:width to 35.
+	set tWindowInput1:style:width to 40.
+	local tWindowInput2 is line4:addtextfield("23").
+	local tWindowLabel4 is line4:addLabel("Secs").
+	set tWindowLabel4:style:width to 35.
+	set tWindowInput2:style:width to 35.
 	
 	//Launch Window Input
 	local lineh2 is gui:ADDHLAYOUT().
@@ -197,8 +206,12 @@ Function launchParameters {
 				lineh6:hide().
 				lineh2:hide().
 				if tWindowInput1:text:length > 0 {
-					global tWindow is tWindowInput1:text:tonumber().
+					set tMin to tWindowInput1:text:tonumber()*60.
 				}
+				if tWindowInput2:text:length > 0 {
+					set tSec to tWindowInput2:text:tonumber().
+				}
+				global tWindow is tMin + tSec.
 			} else if tWindowButton3:pressed {
 				lineh6:show().
 				lineh2:hide().
@@ -276,7 +289,7 @@ Function launchParameters {
 			set Error2:text to "Target Inclination impossible to achieve".
 		}
 		//Launch Window
-		if tWindowInput1:text:tonumber() < 23 {
+		if tWindow < 23 {
 			set inputError to true.
 			set Error2:text to "Must have a tMinus of 23 or more".
 		}

@@ -157,7 +157,7 @@ Function HUDinit {
 	} else {
 		Print "Target Parking Orbit: " + Ceiling(targetapoapsis/1000,2) + "km x " + Ceiling(targetperiapsis/1000,2) + "km" at (0,2).
 	}
-	Print "Target Orbit Inclination: " + Ceiling(ABS(targetinclination),2) + "°" at (0,3).
+	Print "Target Orbit Inclination: " + Ceiling(targetinclination,2) + "°" at (0,3).
 	if logging {
 		Print "-Logging-Data---------------------------------------" at (0,40).
 	} else {
@@ -186,9 +186,9 @@ Function AscentHUD {
 	local hud_met is "Mission Elapsed Time: " + "T" + hud_missionTime(missiontime) + " (" + runmode + ") ".
 	local hud_staging is "-------".
 	local hud_apo is "Apo: " + padding(floor(ship:apoapsis/1000,2),1,2,false) + "km ".
-	local hud_apo_eta is "eta: " + padding(round(eta:apoapsis,1),3,1,false) + "s ".
+	local hud_apo_eta is "eta: " + padding(round(eta:apoapsis,1),3,1,false) + "s    ".
 	local hud_peri is "Per: " + padding(floor(ship:periapsis/1000,2),1,2,false) + "km ".
-	local hud_peri_eta is "eta: " + padding(round(eta:periapsis,1),3,1,false) + "s ".
+	local hud_peri_eta is "eta: " + padding(round(eta:periapsis,1),3,1,false) + "s    ".
 	local hud_ecc is "Ecc: " + padding(max(Round(ship:orbit:eccentricity,4),0.0001),1,4,false).
 	local hud_inc is "Inc: " + padding(Round(ship:orbit:inclination,5),1,5,false) + "°".
 	local hud_dV is " dV: ------- ".

@@ -13,13 +13,16 @@ function launchWindow {
         set launchtime to body:rotationperiod - launchtime.
     }
     local lt is launchtime+time:seconds.
-    if time:seconds < lt-(body:rotationPeriod/2)-23 {
-        return lt-(body:rotationPeriod/2).
-    } else if time:seconds < lt-23 {
+    if time:seconds < lt-(body:rotationPeriod/2)-23 {		//Descending Node
+		global launchNode is " (Descending Node)".
+		return lt-(body:rotationPeriod/2).
+    } else if time:seconds < lt-23 {			//Ascending Node
 		global tInc is -1*tInc.
+		global launchNode is " (Ascending Node)".
         return lt.
-    } else {
+    } else {									//Descending Node
 		return lt+(body:rotationPeriod/2).
+		global launchNode is " (Descending Node)".
 	}
 }
 
