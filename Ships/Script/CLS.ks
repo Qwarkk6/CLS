@@ -181,10 +181,11 @@ set burnDeltaV to 0.																		// Tracks initially calculated burn dV - u
 set printlist to List(). set listlinestart to 6.											// Scrolling print configuration
 set logtime to 60. set dynamicPressure to 0. set dynamicPressureTime to 0. set passedMaxQ to false.				// Variables used to track MaxQ and provide regular speed, distance & alitude updates
 HUDinit(launchtime,targetapoapsis,targetperiapsis,targetinclination,csvLog).				// Prints info at top of HUD
+set missionElapsedTime to 0.
 
 // Data logging
 if csvLog {
-	LogInitialise(targetapoapsis,targetperiapsis,targetinclination).						//Creates an external csv file with launch data
+	LogInitialise(targetapoapsis,targetperiapsis,targetinclination,false).						//Creates an external csv file with launch data
 }
 
 // Main loop begin
@@ -195,8 +196,8 @@ Until launchcomplete {
 	warpControl(runmode).				// Activates warp control function anytime warp speed is manually adjusted
 
 	//Log feature - logs data to the csv file created by LogInitialise()
-	if csvLog and missiontime > 0 {
-		log_data(missiontime,LIST(missiontime,vehicleConfig,StageDV(),twr(),throttle,pitch_for(),(ship:q*constant:AtmToKPa),ship:altitude,ship:apoapsis,eta:apoapsis,ship:periapsis,currentstagenum,staginginprogress,runmode,numparts,circulariseDV_Periapsis(),circulariseDV_Apoapsis(),(BurnApoapsis_TargetPeriapsis(targetapoapsis)+ABS(circulariseDV_TargetPeriapsis(targetapoapsis,targetperiapsis)))),logPath).
+	if csvLog and missionElapsedTime > 0 {
+		log_data(missionElapsedTime,LIST(missionElapsedTime,vehicleConfig,StageDV(),twr(),throttle,pitch_for(),(ship:q*constant:AtmToKPa),ship:altitude,ship:apoapsis,eta:apoapsis,ship:periapsis,currentstagenum,staginginprogress,runmode,numparts,circulariseDV_Periapsis(),circulariseDV_Apoapsis(),(BurnApoapsis_TargetPeriapsis(targetapoapsis)+ABS(circulariseDV_TargetPeriapsis(targetapoapsis,targetperiapsis)))),logPath).
 	}
 
 	// Countdown
@@ -207,7 +208,7 @@ Until launchcomplete {
 		if cdown < -20 {
 			print "T" + hud_missionTime(cdown) + launchNode + "   " at (0,(printlist:length)+listlinestart).	// Will display a countdown if terminal input has set a specific launch time
 		} else if tminus = 20 {
-			scrollprint("Startup").
+			scrollprint("Startup          ").
 			set tminus to tminus-1.
 		}
 	
@@ -300,7 +301,7 @@ Until launchcomplete {
 			Activeenginelist().
 			scrollprint("Ignition").
 			set throttletime to Time:seconds.
-			set liftoffThrottle to TWRthrottle(LiftoffTWR).
+			lock liftoffThrottle to TWRthrottle(LiftoffTWR).
 			lock throttle to min(liftoffThrottle,liftoffThrottle*(Time:seconds-throttletime)/2).
 			set tminus to tminus-1.
 		}
@@ -332,7 +333,7 @@ Until launchcomplete {
 		}
 		
 		// Checks vehicle TWR. Will terminate script if its below the threshold configured in TWR configuration. If TWR is ok, the vehicle will liftoff at the TWR configured in TWR configuration (if it has enough thrust).
-		If cdown >= 0 and tminus = 0 and throttle >= TWRthrottle(LiftoffTWR) {
+		If cdown >= 0 and tminus = 0 and throttle >= liftoffThrottle*0.985 {
 			If TWR() < minLiftoffTWR {
 				lock throttle to 0.
 				scrollprint("Launch Aborted").
@@ -344,10 +345,11 @@ Until launchcomplete {
 				scrollprint("Liftoff (" + T_O_D(time:seconds) + ")").
 				set launchThrottle to TWRthrottle(LiftoffTWR).		// Records the throttle needed to achieve the launch TWR. Used to throttle engines during ascent.
 				lock throttle to launchThrottle.
+				lock missionElapsedTime to time:seconds - launchTime.
 				if vehicleConfig = 1 {		
 					lock throttle to launchThrottle + (PartlistAvailableThrust(asrblist)-PartlistCurrentThrust(asrblist))/PartlistAvailableThrust(aelist).
 				} 
-				unlock cdown.
+				unlock cdown. unlock liftoffThrottle.
 				set runmode to 1.
 			}
 		}
@@ -436,7 +438,7 @@ Until launchcomplete {
 			
 			// Gradual throttle down of central engines in 3 booster config. Occurs when the vehicles maximum possible TWR reaches 2.
 			If CentralEngines = true and not impendingstaging and not staginginprogress {
-				local t is ((ship:availablethrust/aelist:length)*0.55)+(ship:availablethrust/aelist:length)*(aelist:length-1).			//Finds thrust of one engine * 0.55 (what the center engines throttle to) then adds thrust of other engines																				
+				local t is (ship:availablethrust/aelist:length*0.55)*Ship:partstaggedpattern("^CentralEngine"):length+ship:availablethrust/aelist:length*(aelist:length-Ship:partstaggedpattern("^CentralEngine"):length).			//Finds thrust of one engine * 0.55 (what the center engines throttle to) then adds thrust of other engines																				
 				If (ship:mass*adtg())/t*twr() <= 1 or (ship:mass*adtg())/t*2.1 <= 1 {											//If vessel can throttle central engine to maintain twr or keep twr above 2.1
 					If CentralEnginesCalculation = false {
 						set throttletime to Time:seconds.
@@ -730,8 +732,8 @@ Until launchcomplete {
 		// Jettisons fairing/LES when the altitude pressure becomes insignificant and first stage has been jettisoned
 		If Body:atm:altitudepressure(ship:altitude) < 0.00002 and currentstagenum > 1 {
 			If not ImpendingStaging and not staginginprogress and Time:seconds - stagingEndTime >= 5 {
-				set numparts to Ship:parts:length - Ship:partsingroup("AG10"):length.
 				Toggle Ag10. 
+				set numparts to Ship:parts:length.
 				scrollprint(PayloadProtectionConfig + " Jettisoned").
 				set PayloadProtection to false.
 			}
@@ -854,23 +856,27 @@ Until launchcomplete {
 	// Continuous abort detection logic - only checked for during ascent
 	If runmode > 1 {
 		// Angle to desired steering > 25 deg (i.e. steering control loss) during atmospheric ascent
-		If runmode < 3 and Vang(Ship:facing:vector, steering:vector) > 25 and missiontime > 5 {
+		If runmode < 3 and Vang(Ship:facing:vector, steering:vector) > 25 and missionElapsedTime > 5 {
 			set runmode to -666.
+			set abortReason to "Loss of Ship Control".
 			scrollprint("Loss of Ship Control").
 		}
 		// Abort if number of parts less than expected (i.e. ship breaking up)
 		If Ship:parts:length <= (numparts-1) and Stage:ready {
 			set runmode to -666.
+			set abortReason to "Ship breaking apart".
 			scrollprint("Ship breaking apart").
 		}
 		// Abort if falling back toward surface (i.e. insufficient thrust)
 		If runmode = 2 and ship:altitude < atmAlt and verticalspeed < -1.0 {
 			set runmode to -666.
+			set abortReason to "Terminal Thrust".
 			scrollprint("Terminal Thrust").
 		}
 		// Abort due to insufficient electric charge
 		If Resourcecheck("ElectricCharge",0.01) = false {
 			set runmode to -666.
+			set abortReason to "Insufficient Internal Power".
 			scrollprint("Insufficient Internal Power").
 		}
 	}
@@ -892,6 +898,8 @@ Until launchcomplete {
 		set Ship:control:neutralize to true. 
 		scrollprint("Launch Aborted").
 		Hudtext("Launch Aborted!",5,2,100,red,false).
+		LogInitialise(targetapoapsis,targetperiapsis,targetinclination,true).
+		log_abort(LIST(missionElapsedTime,abortReason,vehicleConfig,StageDV(),twr(),throttle,pitch_for(),(ship:q*constant:AtmToKPa),ship:altitude,ship:apoapsis,eta:apoapsis,ship:periapsis,currentstagenum,staginginprogress,runmode,numparts,circulariseDV_Periapsis(),circulariseDV_Apoapsis(),(BurnApoapsis_TargetPeriapsis(targetapoapsis)+ABS(circulariseDV_TargetPeriapsis(targetapoapsis,targetperiapsis)))),logPath).		
 		set launchcomplete to true.
 		if Ship:partsingroup("abort"):length > 0 {
 			runpath("0:/Abort.ks").
