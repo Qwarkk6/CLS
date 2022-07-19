@@ -40,19 +40,8 @@ function Calculations {
 //Resource monitoring
 function chuteResourceTracker {	
 	For res in ship:resources {
-		If res:Name = "ElectricCharge" {
-			set EC to (Res:Amount/Res:Capacity)*100.
-		}
 		if res:Name = "Aerozine50" {
 			set rcsFuel to (Res:Amount/Res:Capacity)*100.
-		}
-	}
-	if fuelCellList:length > 0 {
-		if EC < 15 and fuelCellStatus = "Inactive" {
-			for p in fuelCellList {
-				set fuelCellStatus to "Active".
-				p:getmodule("ModuleResourceConverter"):doevent("start fuel cell").
-			}
 		}
 	}		
 } 
