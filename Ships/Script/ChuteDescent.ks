@@ -4,6 +4,7 @@ runpath("0:/CLS_lib/lib_num_to_formatted_str.ks").
 runpath("0:/ChuteDescent_lib/ChuteDescent_lib.ks").
 runpath("0:/CLS_lib/lib_navball.ks").
 runpath("0:/CLS_lib/CLS_nav.ks").
+runpath("0:/FuelCell_Lib.ks").
 SAS off. RCS on. Brakes on.
 lock steering to ship:srfretrograde.
 lock entryTime to time:seconds.
@@ -21,7 +22,6 @@ print "Awaiting Free-fall" at (0,0).
 set shipStatus to "Re-entry".
 set chuteStatus to "-".
 set drogueStatus to "-".
-set fuelCellStatus to "Inactive".
 
 //Detect if ship has aborted
 if alt:radar < ship:body:atm:height/2 {
@@ -31,7 +31,7 @@ if alt:radar < ship:body:atm:height/2 {
 }
 
 //Part list creation for different parachute modules
-set sstuChuteList to list(). set stockChuteList to list(). set stockDrogueList to list(). set fuelCellList to list().
+set sstuChuteList to list(). set stockChuteList to list(). set stockDrogueList to list().
 for p in ship:parts {
 	if p:hasmodule("SSTUModularParachute") {
 		sstuChuteList:add(p).
@@ -48,13 +48,10 @@ for p in ship:parts {
 			p:getmodule("ModuleParachute"):setfield("altitude",1000).
 		}
 	}
-	if p:hasmodule("ModuleResourceConverter") {
-		fuelCellList:add(p).
-	}
 }
 
 when scriptStatus = "Running" then {
-	chuteResourceTracker(). Calculations(). chuteHUD().
+	chuteResourceTracker(). Calculations(). ECmonitor(). chuteHUD(). fuelCellControl().
 	if warp > 2 {
 		set warp to 2.
 	}
