@@ -8,7 +8,7 @@ The function <a href="https://www.reddit.com/r/Kos/comments/3fim1n/cant_find_the
 
 The function <a href="https://github.com/TheGreatFez/kOS-Scripts">PitchProgram_Sqrt</a> is a modified version of TheGreatFez's pitch program.
 
-The function <a href="https://www.reddit.com/r/Kos/comments/539idc/comment/d7sdotu/?utm_source=share&utm_medium=web2x&context=3">launchWindow</a> was shared by /u/Rybec in the kOS subreddit.	
+The function <a href="https://www.reddit.com/r/Kos/comments/539idc/comment/d7sdotu/?utm_source=share&utm_medium=web2x&context=3">launchWindow</a> was shared by /u/Rybec in the kOS subreddit, and is the basis for the launchWindowContract and launchWindowRendezvous functions.	
 
 The function <a href="https://www.reddit.com/r/Kos/comments/6bsg5g/comment/dhyymbi/?utm_source=share&utm_medium=web2x&context=3">orbitnormal</a> was shared by /u/ElWanderer_KSP in the kOS subreddit.		
 
