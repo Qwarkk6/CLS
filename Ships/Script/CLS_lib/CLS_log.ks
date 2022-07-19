@@ -7,6 +7,7 @@ Function logInitialise {
 	parameter apoapsis.
 	parameter periapsis.
 	parameter inclination.
+	parameter abort.
 	local year is (time:year):tostring().
 	local day is (time:day):tostring().
 	local hour is (time:hour):tostring().
@@ -20,18 +21,25 @@ Function logInitialise {
 		set minute to "0" + minute.
 	}
 	local logname is "Y"+year+"_"+"D"+day+"_"+hour+"."+minute+"_"+vesselName+"_"+realTime.
+	if abort = true {
+		set logname to "Y"+year+"_"+"D"+day+"_"+hour+"."+minute+"_"+vesselName+"_ABORT_"+realTime.
+	}
 	global logpath is path("0:/CLS_lib/logs/" + logname + ".csv").
 	global missionTimeLog is 0.
 	Log ("Apoapsis,"+(apoapsis/1000)+"km"+" Periapsis,"+(periapsis/1000)+"km"+" ,Inc,"+round(inclination,2)) to logPath.
-	Log (" ") to logPath. 
-	Log ("MET,vehicleConfig,dV,TWR,Throttle,Pitch,Q,Alt,Apoapsis,Eta:apo,Periapsis,Stage,Staging,Runmode,Parts,Peri Circ,Apo Circ,3burn Circ,Est Rem dV") to logPath.
+	Log (" ") to logPath.
+	if abort = false {
+		Log ("MET,vehicleConfig,dV,TWR,Throttle,Pitch,Q,Alt,Apoapsis,Eta:apo,Periapsis,Stage,Staging,Runmode,Parts,Peri Circ,Apo Circ,3burn Circ,Est Rem dV") to logPath.
+	} else {
+		Log ("MET,AbortReason,vehicleConfig,dV,TWR,Throttle,Pitch,Q,Alt,Apoapsis,Eta:apo,Periapsis,Stage,Staging,Runmode,Parts,Peri Circ,Apo Circ,3burn Circ,Est Rem dV") to logPath.
+	}
 }
 
 // example use - log_data(LIST(newTime,newAlt,newVel:MAG,newDynamicP,dragForce,newAtmPressure,atmDencity*1000,dragCoef,thermalMassIsh,atmTemp,mach),logPath).
 // Logs data from list to log file specified
 function log_data {
-	Parameter missiontime,logData,logpath.
-	if missiontime > missionTimeLog {
+	Parameter missionElapsedTime,logData,logpath.
+	if missionElapsedTime > missionTimeLog {
 		local logString is "".
 		For data in logData {
 			if (data):typename() = "String" or (data):typename() = "Boolean" {
@@ -42,6 +50,20 @@ function log_data {
 		}
 		logString:remove((logString:length - 1),1).
 		Log logString TO logpath.
-		set missionTimeLog to missiontime+0.5.
+		set missionTimeLog to missionElapsedTime+0.5.
+	}
+}
+
+function log_abort {
+	Parameter logData,logpath.
+	local logString is "".
+	For data in logData {
+		if (data):typename() = "String" or (data):typename() = "Boolean" {
+			set logString to logString + data + ",".			//Rounds all scaler values to 2 sign numbers
+		} else {
+			set logString to logString + round(data,2) + ",".
+		}
+		logString:remove((logString:length - 1),1).
+		Log logString TO logpath.
 	}
 }

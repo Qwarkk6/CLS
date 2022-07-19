@@ -60,3 +60,32 @@ Local function adv_ceiling {
 	Local multiplier is 10^dp.
 	return CEILING(num * multiplier)/multiplier.
 }
+
+//Converts number with an exponent (eg 5.413E-12) to a decimal string
+function expDecimal {
+	parameter number.
+	parameter rounding is 0.
+	
+	local n is number:tostring.
+	if n:contains("E-") {
+		global output is "0.".
+		local decimalPlaces is n:remove(0,n:find("E-")+2).
+		set n to n:remove(n:find("E-"),2+n:remove(0,n:find("E-")+2):length).
+		set n to n:remove(n:find("."),1).
+		
+		until output:length = decimalPlaces:tonumber()+1 {
+			set output to output:insert(output:length,"0").
+			wait 0.001.
+		}
+		set output to output:insert(output:length,n).
+		if rounding > 0 {
+			set output to output:remove(2+rounding,output:length-(2+rounding)).
+		}
+	} else {
+		global output is number.
+		if rounding > 0 {
+			set output to floor(output,rounding).
+		}
+	}
+	return output.
+}

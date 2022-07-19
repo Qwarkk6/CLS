@@ -16,7 +16,7 @@ Function scrollprint {
 			local t_minus is "T" + hud_missionTime(cdown) + " - ".
 			printlist:add(t_minus + nextprint).
 		} else {
-			local t_plus is "T" + hud_missionTime(missiontime) + " - ".
+			local t_plus is "T" + hud_missionTime(missionElapsedTime) + " - ".
 			printlist:add(t_plus + nextprint).
 		}
 	} else {
@@ -129,7 +129,7 @@ Function maxQ {
 	
 // Periodic readouts for vehicle speed, altitude and downrange distance
 Function eventLog {
-	If missiontime >= logTime {
+	If missionElapsedTime >= logTime {
 		//Downrange calculations
 		local v1 is ship:geoposition:position - ship:body:position.
 		local v2 is launchLocation:position - ship:body:position.
@@ -183,7 +183,7 @@ Function countdown {
 // Identifies / Calculates data to be displayed on the terminal HUD.
 Function AscentHUD {
 	
-	local hud_met is "Mission Elapsed Time: " + "T" + hud_missionTime(missiontime) + " (" + runmode + ") ".
+	local hud_met is "Mission Elapsed Time: " + "T" + hud_missionTime(missionElapsedTime) + " (" + runmode + ") ".
 	local hud_staging is "-------".
 	local hud_apo is "Apo: " + padding(floor(ship:apoapsis/1000,2),1,2,false) + "km ".
 	local hud_apo_eta is "eta: " + padding(round(eta:apoapsis,1),3,1,false) + "s    ".

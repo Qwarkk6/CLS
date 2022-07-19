@@ -1,4 +1,4 @@
-function launchWindow {
+function launchWindowContract {
 	parameter Inc, Lan.
     local lat is ship:latitude.
     local eclipticNormal is orbitNormal(Inc,Lan).
@@ -23,6 +23,32 @@ function launchWindow {
     } else {									//Descending Node
 		return lt+(body:rotationPeriod/2).
 		global launchNode is " (Descending Node)".
+	}
+}
+
+function launchWindowRendezvous {
+    parameter tgt.
+    local lat IS ship:latitude.
+    local eclipticNormal is vcrs(tgt:obt:velocity:orbit,tgt:body:position-tgt:position):normalized.
+    local planetnormal is heading(0,lat):vector.
+    local bodyinc is vang(planetnormal, eclipticnormal).
+    local beta is arccos(max(-1,min(1,cos(bodyinc) * sin(lat) / sin(bodyinc)))).
+    local intersectdir is vcrs(planetnormal, eclipticnormal):normalized.
+    local intersectpos is -vxcl(planetnormal, eclipticnormal):normalized.
+    local launchtimedir is (intersectdir * sin(beta) + intersectpos * cos(beta)) * cos(lat) + sin(lat) * planetnormal.
+    local launchtime is vang(launchtimedir, ship:position - body:position) / 360 * body:rotationperiod.
+    if vcrs(launchtimedir, ship:position - body:position)*planetnormal < 0 {
+        set launchtime to body:rotationperiod - launchtime.
+    }
+    global tminusAscending is launchtime.
+    global tminusDescending1 is launchtime-tgt:body:rotationperiod/2.
+	
+	if tminusDescending1 > 0 {
+		global tInc is -1*target:orbit:inclination.
+		return tminusDescending1.
+	} else {
+		global tInc is target:orbit:inclination.
+		return tminusAscending.
 	}
 }
 

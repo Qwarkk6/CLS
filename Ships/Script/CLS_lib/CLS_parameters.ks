@@ -8,7 +8,7 @@ Function launchParameters {
 	//Initialise
 	local userInput is false.
 	local confirmed is false.
-	local gui is gui(350).
+	local gui is gui(375).
 	local output is list().
 	local inputError is false.
 	local warning is false.
@@ -55,18 +55,21 @@ Function launchParameters {
 	local tWindowLabel1 is line3:addLabel("Launch Window").
 	local tWindowButton1 is line3:addbutton("Time").
 	local tWindowButton2 is line3:addbutton("tMinus").
-	local tWindowButton3 is line3:addbutton("Instantaneous").
-	tWindowButton3:hide().
+	local tWindowButton3 is line3:addbutton("Contract").
+	local tWindowButton4 is line3:addbutton("Target").
 	set tWindowButton2:pressed to true.
-	set tWindowButton1:toggle to  true.
-	set tWindowButton2:toggle to  true.
-	set tWindowButton3:toggle to  true.
-	set tWindowButton1:exclusive to  true.
-	set tWindowButton2:exclusive to  true.
-	set tWindowButton3:exclusive to  true.
-	set tWindowButton1:style:width to 50.	
+	set tWindowButton1:toggle to true.
+	set tWindowButton2:toggle to true.
+	set tWindowButton3:toggle to true.
+	set tWindowButton4:toggle to true.
+	set tWindowButton1:exclusive to true.
+	set tWindowButton2:exclusive to true.
+	set tWindowButton3:exclusive to true.
+	set tWindowButton4:exclusive to true.
+	set tWindowButton1:style:width to 40.	
 	set tWindowButton2:style:width to 50.	
-	set tWindowButton3:style:width to 95.	
+	set tWindowButton4:style:width to 50.	
+	set tWindowButton3:style:width to 60.	
 	
 	//Launch Window Input
 	local line4 is gui:ADDHLAYOUT().
@@ -186,15 +189,15 @@ Function launchParameters {
 					global tInc is tIncInput:text:tonumber().
 				}
 			}
-			if tInc < 0 or tInc > 0 {
-				tWindowButton3:show().
+			if tInc < 0 or tInc > 0 and tWindowButton3:pressed {
+				lineh6:show().
 			} else {
-				tWindowButton3:hide().
-				set tWindowButton2:pressed to true.
+				lineh6:hide().
 			}				
 			
 			//Launch Window
 			if tWindowButton1:pressed { 
+				line2:show().
 				line4:hide().
 				lineh6:hide().
 				lineh2:show().
@@ -202,6 +205,7 @@ Function launchParameters {
 					global tWindow is tWindowInput2a:text + ":" + tWindowInput2b:text + ":" + tWindowInput2c:text.
 				}
 			} else if tWindowButton2:pressed {
+				line2:show().
 				line4:show().
 				lineh6:hide().
 				lineh2:hide().
@@ -213,11 +217,21 @@ Function launchParameters {
 				}
 				global tWindow is tMin + tSec.
 			} else if tWindowButton3:pressed {
-				lineh6:show().
+				line2:show().
 				lineh2:hide().
 				line4:hide().
 				if tWindowInput3a:text:length > 0 {
-					global tWindow is launchWindow(tInc,tWindowInput3a:text:tonumber())-(time:seconds+30).
+					global tWindow is launchWindowContract(tInc,tWindowInput3a:text:tonumber())-(time:seconds+30).
+				} else {
+					global tWindow is 23.
+				}
+			} else if tWindowButton4:pressed {
+				lineh2:hide().
+				line2:hide().
+				lineh6:hide().
+				line4:hide().
+				if hastarget = true {
+					global tWindow is launchWindowRendezvous(target).
 				}
 			}
 			
@@ -301,10 +315,16 @@ Function launchParameters {
 			set inputError to true.
 			set Error2:text to "Incorrect time detected".
 		}
-		if tWindowButton3:pressed {
+		if tInc < 0 or tInc > 0 and tWindowButton3:pressed {
 			if tWindowInput3a:text:tonumber() < 0 or tWindowInput3a:text:tonumber() > 360 {
 				set inputError to true.
 				set Error2:text to "Longitude of Ascending Node must be between 0° and 360°".
+			}
+		}
+		if tWindowButton4:pressed {
+			if hastarget = false {
+				set inputError to true.
+				set Error2:text to "Please select a target vessel".
 			}
 		}
 		if tMStages < 1 {
