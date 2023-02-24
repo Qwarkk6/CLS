@@ -1,7 +1,21 @@
 Changelog
 ==========================
 
-<b>v1.4.6 (27/01/22)</b>
+<b>v1.5.1 (24/02/22)</b>
+
+Happy KSP2 release day!
+
+This will be the final release made for CLS supporting KSP 1. I do not know the future of kOS in KSP 2 but will hopefully get the chance to continue developing this script for the new game.
+
+kOS v1.4 made some script breaking changes, and this update fixes the following:
+
+ - 'Clobbered builtins' issue raised by u/MaxHeadroom68 - around 15 variables have been renamed
+ - Specifying a launch time now works as expected.
+ 
+Please note, I have given this update very limited play testing. I hope I have caught all the variables requiring a rename.
+<br>
+
+<b>v1.5.0 (27/01/22)</b>
 
 - Ship will now throttle down as its apoapsis  approaches the target to ensure better orbit accuracy. Note: there are conditions under which this will not happen.
 - Altered the way CLS detects thrust curves for SRBs. The old method was more accurate but the performance hit was huge. The new method is less accurate but much more compatible and performs much faster.
