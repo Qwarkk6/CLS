@@ -1,5 +1,6 @@
 //Initial script setup
 clearscreen.
+set terminal:width to 40. set terminal:height to 25.
 runpath("0:/CLS_lib/lib_num_to_formatted_str.ks").
 runpath("0:/ChuteDescent_lib/ChuteDescent_lib.ks").
 runpath("0:/CLS_lib/lib_navball.ks").
@@ -12,16 +13,17 @@ set scriptStatus to "Running".
 on sas { sas off. preserve. }
 
 //Variables creation
-set chuteMaxQ to 20000.
-set drogueMaxQ to 30000.
-set dynamicPressure to 99999999.
-set dynamicPressureTime to 0.
+set chuteMaxQ to 20000.		//340m/s
+set drogueMaxQ to 30000.	//880m/s
+set dyPr to 99999999.
+set dyPrTime to 0.
 
 //HUD Initialisation
 print "Awaiting Free-fall" at (0,0).
 set shipStatus to "Re-entry".
 set chuteStatus to "-".
 set drogueStatus to "-".
+set runmode to 0.
 
 //Detect if ship has aborted
 if alt:radar < ship:body:atm:height/2 {
@@ -31,21 +33,19 @@ if alt:radar < ship:body:atm:height/2 {
 }
 
 //Part list creation for different parachute modules
-set sstuChuteList to list(). set stockChuteList to list(). set stockDrogueList to list().
+set stockChuteList to list(). set stockDrogueList to list().
 for p in ship:parts {
-	if p:hasmodule("SSTUModularParachute") {
-		sstuChuteList:add(p).
-		p:getmodule("SSTUModularParachute"):setfield("drogue deploy alt",2500).
-		p:getmodule("SSTUModularParachute"):setfield("main deploy alt",750).
-	} else if p:hasmodule("ModuleParachute") {
+	if p:hasmodule("ModuleParachute") {
 		if p:title:contains("Drogue") {
 			stockDrogueList:add(p).
 			set drogueStatus to "Unsafe to deploy".
 			p:getmodule("ModuleParachute"):setfield("altitude",5000).
+			p:getmodule("ModuleParachute"):setfield("min pressure",0.01).
 		} else {
 			stockChuteList:add(p).
 			set chuteStatus to "Unsafe to deploy".
 			p:getmodule("ModuleParachute"):setfield("altitude",1000).
+			p:getmodule("ModuleParachute"):setfield("min pressure",0.01).
 		}
 	}
 }
@@ -60,23 +60,17 @@ when scriptStatus = "Running" then {
 
 wait until ship:altitude < body:atm:height and ship:verticalspeed < 0. 
 set entryTime to time:seconds.
-if not abortMode {
-	wait until dynamicPressureTracker(dynamicPressure) = false.
-	wait until dynamicPressureTracker(dynamicPressure) = true.
+if abortMode = false {
+	wait until dynamicPressureTracker(dyPr) = "Increasing".
+	wait until dynamicPressureTracker(dyPr) = "Decreasing".
 }
 
 //Drogue Deploy
-if stockDrogueList:length > 0 or sstuChuteList:length > 0 {
+if stockDrogueList:length > 0 {
 	set shipStatus to "Awaiting Drogue Deploy".
 	wait until Body:atm:altitudepressure(ship:altitude) > 0.02 and ship:Q*constant:atmtokpa*1000 < drogueMaxQ.
-	wait until alt:radar < 10000 or (ship:Q*constant:atmtokpa*1000)*1.1 > drogueMaxQ and dynamicPressureTracker(dynamicPressure) = false.
-	if sstuChuteList:length > 0 {
-		for p in sstuChuteList {
-			p:getmodule("SSTUModularParachute"):setfield("drogue deploy alt",ship:altitude+1000).
-			p:getmodule("SSTUModularParachute"):doaction("deploy chute",true).
-		}
-		set runmode to 3.
-	} else if stockDrogueList:length > 0 {
+	wait until alt:radar < 10000 or (ship:Q*constant:atmtokpa*1000)*1.1 > drogueMaxQ and dynamicPressureTracker(dyPr) = "Increasing".
+	if stockDrogueList:length > 0 {
 		for p in stockDrogueList {
 			p:getmodule("ModuleParachute"):setfield("altitude",ship:altitude+1000).
 			p:getmodule("ModuleParachute"):doaction("deploy chute",true).
@@ -92,13 +86,10 @@ if stockDrogueList:length > 0 or sstuChuteList:length > 0 {
 
 //Descent under Drogues - will advance to mains early if it thinks drogues are deployed, dynamic pressure is still rising and its close to unsafe mains threshold
 if runmode = 1 {
-	set shipStatus to "Drogue chutes Deployed".
-	wait until Body:atm:altitudepressure(ship:altitude) > 0.04 and alt:radar < 4500.
-	until alt:radar < 1050 {
-		if (ship:Q*constant:atmtokpa*1000)*1.1 > chuteMaxQ and dynamicPressureTracker(dynamicPressure) = false {
-			set runmode to 2.
-		}
+	if stockDrogueList:length > 0 {
+		set shipStatus to "Drogue chutes Deployed".
 	}
+	wait until alt:radar < 1050 or (ship:Q*constant:atmtokpa*1000)*1.1 > chuteMaxQ and dynamicPressureTracker(dyPr) = "Increasing".
 	set runmode to 2.
 }
 
@@ -106,7 +97,7 @@ if runmode = 1 {
 if runmode = 2 {
 	if stockChuteList:length > 0 {
 		set shipStatus to "Awaiting Chute Deploy".
-		wait until Body:atm:altitudepressure(ship:altitude) > 0.04 and ship:Q*constant:atmtokpa*1000 < chuteMaxQ.
+		wait until Body:atm:altitudepressure(ship:altitude) > 0.01 and ship:Q*constant:atmtokpa*1000 < chuteMaxQ.
 		for p in stockChuteList {
 			p:getmodule("ModuleParachute"):doaction("deploy chute",true).
 		}
@@ -120,7 +111,7 @@ if runmode = 2 {
 
 //Final descent
 if runmode = 3 {
-	if stockDrogueList:length > 0 and abortMode = false {
+	if stockDrogueList:length > 0 and stockChuteList:length > 0 {
 		until stockDrogueList:length = 0 {
 			if alt:radar < 1050 {
 				stockDrogueList[0]:getmodule("ModuleParachute"):doevent("cut parachute").

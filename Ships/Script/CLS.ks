@@ -63,6 +63,9 @@ set targetinclination to launchParameters[2].		//0°
 set launchWindow to launchParameters[3].			//23 Seconds
 set maxStages to launchParameters[4].				//2
 set csvLog to launchParameters[5].					//false
+set launchFailure to launchParameters[6].			
+set launchFailureApo to launchParameters[7].					
+
 
 // TWR configuration
 set minLiftoffTWR to 1.3.				// Minimum liftoff TWR. Launch will abort just before liftoff if the vehicle attempts to launch with anything lower.
@@ -90,6 +93,7 @@ set config:ipu to 800. set config:stat to false.
 
 // Steering manager setup
 set SteeringManager:RollTS to 5.						// Reduces oversensitive roll correction during ascent
+set SteeringManager:maxStoppingTime to 1.
 
 // Script Library
 runpath("0:/CLS_lib/CLS_dv.ks"). 
@@ -130,12 +134,14 @@ set staginginprogress to false.																// Boolean. True when rocket is s
 set stagingComplete to false.																// Boolean. True when staging has succesfully occured
 set srbStagingStartTime to Time:seconds+100000.												// Tracks staging start time of SRBs / boosters. set to high number while unused
 set srbFlameoutTime to 0.																	// Tracks impending SRB burn out
+set currentTwrThrottle to 0.																// Tracks TWR at SRB sep
 set stagingStartTime to Time:seconds+100000.												// Tracks staging start time. set to high number while unused
 set stagingEndTime to Time:seconds+100000.													// Tracks staging end time. set to high number while unused
 set SRBstagingOverride to false.															// Overrides staging detection and forces staging when SRB thrust curve is < 0.25.
-set EngstagingOverride to false.															// Overrides staging detection for engine flame-out. 
+set EngstagingOverride to false.															// Overrides staging detection for engine flame-out. 		
 set Ullagedetected to false.																// Boolean. Tracks whether vehicle uses ullage motors during staging. set during staging.
 set stagingApoapsisETA to 1000.																// Tracks eta:apoapsis at time of staging - used to determine when upper stages can throttle down
+set flameoutCounter to 0.																	// Counts engines in flameout still attached to vessel
 
 // Loop variables 
 set launchcomplete to false.																// Terminates script on completion
@@ -176,9 +182,10 @@ set hibernationEnabled to false.															// Tracks hibernation status
 set burnStartTime to Time:seconds+100000.													// Determines time at which manuever burn should start. 
 set burnStarted to false.																	// Tracks whether the burn has started
 set burnDeltaV to 0.																		// Tracks initially calculated burn dV - used to determine when burn should end
+set manueverDV to 0.																		// Same value but different format to the above
 
 //HUD Initialise
-set printlist to List(). set listlinestart to 6.											// Scrolling print configuration
+set printqueue to List(). set listlinestart to 6.											// Scrolling print configuration
 set logtime to 60. set dynamicPressure to 0. set dynamicPressureTime to 0. set passedMaxQ to false.				// Variables used to track MaxQ and provide regular speed, distance & alitude updates
 HUDinit(launchtime,targetapoapsis,targetperiapsis,targetinclination,csvLog).				// Prints info at top of HUD
 set missionElapsedTime to 0.
@@ -192,7 +199,7 @@ if csvLog {
 Until launchcomplete {
 
 	// Initiate looping functions
-	if not abort { AscentHUD().	}		// Initiates the HUD information at the bottom of the terminal.
+	if not abort and not manualAbort { AscentHUD().	}		// Initiates the HUD information at the bottom of the terminal.
 	warpControl(runmode).				// Activates warp control function anytime warp speed is manually adjusted
 
 	//Log feature - logs data to the csv file created by LogInitialise()
@@ -206,7 +213,7 @@ Until launchcomplete {
 		Countdown(tminus,cdown).					// Displays the countdown on the terminal
 		
 		if cdown < -20 {
-			print "T" + hud_missionTime(cdown) + launchNode + "   " at (0,(printlist:length)+listlinestart).	// Will display a countdown if terminal input has set a specific launch time
+			print "T" + hud_missionTime(cdown) + launchNode + "   " at (0,(printqueue:length)+listlinestart).	// Will display a countdown if terminal input has set a specific launch time
 		} else if tminus = 20 {
 			scrollprint("Startup          ").
 			set tminus to tminus-1.
@@ -437,7 +444,7 @@ Until launchcomplete {
 			}
 			
 			// Gradual throttle down of central engines in 3 booster config. Occurs when the vehicles maximum possible TWR reaches 2.
-			If CentralEngines = true and not impendingstaging and not staginginprogress {
+			If CentralEngines = true and missionElapsedTime >= 60 and not impendingstaging and not staginginprogress {
 				local t is (ship:availablethrust/aelist:length*0.55)*Ship:partstaggedpattern("^CentralEngine"):length+ship:availablethrust/aelist:length*(aelist:length-Ship:partstaggedpattern("^CentralEngine"):length).			//Finds thrust of one engine * 0.55 (what the center engines throttle to) then adds thrust of other engines																				
 				If (ship:mass*adtg())/t*twr() <= 1 or (ship:mass*adtg())/t*2.1 <= 1 {											//If vessel can throttle central engine to maintain twr or keep twr above 2.1
 					If CentralEnginesCalculation = false {
@@ -446,13 +453,13 @@ Until launchcomplete {
 						scrollprint("Throttling Central Engines").
 						set currentthrottle to throttle.		
 						set CentralEnginesThrottle to (ship:mass*adtg())/t*min(2.1,twr()).
-						lock throttle to (CentralEnginesThrottle - currentthrottle)*((Time:seconds-throttletime)/5)+currentthrottle.							//Calculates throttle needed (after throttle) to maintain currenttwr.
+						lock throttle to (CentralEnginesThrottle - currentthrottle)*((Time:seconds-throttletime)/1.5)+currentthrottle.							//Calculates throttle needed (after throttle) to maintain currenttwr.
 					}
 				}
 				If CentralEnginesCalculation = true {
 					For e in Ship:partstaggedpattern("^CentralEngine") {
-						If Time:seconds - throttletime < 5 {
-							set e:thrustlimit to ((55 - 100)*((Time:seconds-throttletime)/5)+100).
+						If Time:seconds - throttletime < 1.5 {
+							set e:thrustlimit to ((55 - 100)*((Time:seconds-throttletime)/1.5)+100).
 						} else {
 							set e:thrustlimit to 55.
 							lock throttle to CentralEnginesThrottle.
@@ -475,7 +482,7 @@ Until launchcomplete {
 						set srbFlameoutTime to time:seconds.
 						set currentthrottle to throttle.
 					}
-					lock throttle to min(TWRthrottle(maxAscentTWR),currentthrottle + ((TWRthrottle(maxAscentTWR)-currentthrottle)*(Time:seconds-srbFlameoutTime)/2)).
+					//lock throttle to min(TWRthrottle(currentTwr),currentthrottle + ((TWRthrottle(currentTwr)-currentthrottle)*(Time:seconds-srbFlameoutTime)/2)).
 					if ImpendingStagingTime = 0 {
 						set ImpendingStagingTime to time:seconds.
 						set ImpendingStagingPitch to pitch_for_vector(ship:facing:forevector).
@@ -494,7 +501,7 @@ Until launchcomplete {
 			}
 			
 			// Checks whether it has been 5 seconds since staging and time to apoapsis is above 120 seconds and second stage has boosted eta:apoapsis by 30 seconds since sep before gradually throttling to TWR set by UpperAscentTWR			
-			If eta:apoapsis < eta:periapsis and Eta:apoapsis > stagingApoapsisETA and throttleCheck = false and (Time:seconds - stagingEndTime) >= 15 {
+			If eta:apoapsis < eta:periapsis and Eta:apoapsis > stagingApoapsisETA and Eta:apoapsis > 120 and throttleCheck = false and (Time:seconds - stagingEndTime) >= 15 {
 				set ApoEtacheck to true.
 				if TWR() > UpperAscentTWR {
 					set throttleCheck to true.
@@ -508,12 +515,12 @@ Until launchcomplete {
 					lock throttle to max(TWRthrottle(UpperAscentTWR),((TWRthrottle(UpperAscentTWR) - currentthrottle)*((Time:seconds-throttletime)/5)+currentthrottle)).
 				}
 				//Throttle down approaching target apoapsis
-				if orbitData >= targetapoapsis*0.95 and Eta:apoapsis > 30 {
+				if orbitData >= targetapoapsis*0.925 and Eta:apoapsis > 30 {
 					if approachingApo = false {
 						set currentThrottle2 to throttle.
 						set approachingApo to true.
 					} else {
-						lock throttle to max(TWRthrottle(0.2),currentThrottle2*((targetapoapsis-orbitData)/(targetapoapsis*0.05))).
+						lock throttle to max(TWRthrottle(0.02),currentThrottle2*((targetapoapsis-orbitData)/(targetapoapsis*0.075))).
 					}
 				} else if Eta:apoapsis < 75 {						// If time to apoapsis drops below 75 seconds after engines have throttled down, this will throttle them back up
 					set ApoEtacheck to false.
@@ -528,6 +535,19 @@ Until launchcomplete {
 			if ImpendingStagingTime = 0 {
 				set ImpendingStagingTime to time:seconds.
 				set ImpendingStagingPitch to pitch_for_vector(ship:facing:forevector).
+			}
+		}
+		
+		//Continuously TWR tracking to calculate post jettison twr
+		if ImpendingStaging {
+			set flameoutCounter to 0.
+			For e in elist {
+				If e:ignition and e:flameout {	
+					set flameoutCounter to flameoutCounter + 1.
+				}
+			}
+			if flameoutCounter = 0 {
+				set currentTwrThrottle to twr().
 			}
 		}
 		
@@ -592,6 +612,13 @@ Until launchcomplete {
 			set ascentCompleteTime to time:seconds.
 			set runmode to 3.
 		}
+		
+		//Random chance of launch failure
+		if launchFailure {
+			if ship:apoapsis >= launchFailureApo {
+				set runmode to -666.
+			}
+		}
 	}
 	
 	// Manuever Node creation for circularisation burn	
@@ -644,7 +671,8 @@ Until launchcomplete {
 		} else if not EngstagingOverride {
 			set burnStartTime to time:seconds + cnode:eta - nodeBurnStart(cnode).
 			set burnStarted to false.
-			set burnDeltaV to cnode:deltav.
+			set burnDeltaV to cnode:deltav:mag.
+			set manueverDV to cnode:deltav.
 			if time:seconds < burnStartTime {
 				lock steering to Ship:prograde:forevector.
 				lowPowerModeOn().
@@ -658,10 +686,10 @@ Until launchcomplete {
 	
 	// Coast phase
 	If runmode = 5 {
-		if time:seconds >= burnStartTime-60 and hibernationEnabled = true {
+		if time:seconds >= burnStartTime-120 and hibernationEnabled = true {
 			lowPowerModeOff().
 		}
-		if time:seconds >= burnStartTime-45 {		// Will take the vehicle out of warp (and prevent further warping) 90 seconds before the circularisation burn is due to start
+		if time:seconds >= burnStartTime-90 {		// Will take the vehicle out of warp (and prevent further warping) 90 seconds before the circularisation burn is due to start
 			scrollprint("Preparing for Burn").
 			scrollprint("          Delta-v requirement: " + ceiling(cnode:deltav:mag,2) + "m/s",false).
 			scrollprint("          Burn time: " + hud_missionTime(nodeBurnTime()),false).
@@ -671,7 +699,8 @@ Until launchcomplete {
 			if StageDV() < cnode:deltav:mag {
 				set cnode:prograde to stageDV()*0.99.
 				set burnStartTime to time:seconds + cnode:eta - nodeBurnStart(cnode).
-				set burnDeltaV to cnode:deltav.
+				set burnDeltaV to cnode:deltav:mag.
+				set manueverDV to cnode:deltav.
 			} else {
 				set runmode to 6.
 			}
@@ -694,11 +723,17 @@ Until launchcomplete {
 			lock throttle to 1.
 			scrollprint(enginereadout(currentstagenum) + " Ignition").
 		}
+		if cnode:deltav:mag / burnDeltaV < 0.075 and cnode:deltav:mag / burnDeltaV > 0.05 {
+			set manueverVector to cnode:burnvector.
+		}
 
 		// Handles throttle and burn end
 		if burnStarted = true {
+			if cnode:deltav:mag / burnDeltaV < 0.075 {
+				lock steering to manueverVector.
+			}
 			lock throttle to min(cnode:deltav:mag/(ship:availablethrust/ship:mass),1).		// This will throttle the engine down when there is less than 1 second remaining in the burn
-			if cnode:deltav:mag < 0.1 or vdot(burnDeltaV,cnode:deltav) < 0.1 or vang(ship:facing:vector,cnode:burnvector) > 5 {
+			if cnode:deltav:mag < 0.1 or vdot(manueverDV,cnode:deltav) < 0.1 {
 				lock throttle to 0.
 				scrollprint(enginereadout(currentstagenum) + " Cut-Off").
 				set runmode to 7.
@@ -795,9 +830,13 @@ Until launchcomplete {
 					SRBDetect(ship:parts).
 					SolidFuel().
 				}
-				if TWRthrottle(maxAscentTWR) < 1 {
-					lock throttle to TWRthrottle(maxAscentTWR).
-					scrollprint("Maintaining TWR").
+				set currentTWRThrottle to TWRthrottle(currentTWRThrottle).
+				if currentTWRThrottle < 1 {
+					lock throttle to currentTWRThrottle.
+					if currentTWRThrottle >= TWRthrottle(maxAscentTWR) {
+						lock throttle to TWRthrottle(maxAscentTWR).
+						scrollprint("Maintaining TWR").
+					}
 				} else {
 					lock throttle to 1.
 				}
@@ -858,25 +897,21 @@ Until launchcomplete {
 		// Angle to desired steering > 25 deg (i.e. steering control loss) during atmospheric ascent
 		If runmode < 3 and Vang(Ship:facing:vector, steering:vector) > 25 and missionElapsedTime > 5 {
 			set runmode to -666.
-			set abortReason to "Loss of Ship Control".
 			scrollprint("Loss of Ship Control").
 		}
 		// Abort if number of parts less than expected (i.e. ship breaking up)
 		If Ship:parts:length <= (numparts-1) and Stage:ready {
 			set runmode to -666.
-			set abortReason to "Ship breaking apart".
 			scrollprint("Ship breaking apart").
 		}
 		// Abort if falling back toward surface (i.e. insufficient thrust)
 		If runmode = 2 and ship:altitude < atmAlt and verticalspeed < -1.0 {
 			set runmode to -666.
-			set abortReason to "Terminal Thrust".
 			scrollprint("Terminal Thrust").
 		}
 		// Abort due to insufficient electric charge
 		If Resourcecheck("ElectricCharge",0.01) = false {
 			set runmode to -666.
-			set abortReason to "Insufficient Internal Power".
 			scrollprint("Insufficient Internal Power").
 		}
 	}
@@ -898,8 +933,6 @@ Until launchcomplete {
 		set Ship:control:neutralize to true. 
 		scrollprint("Launch Aborted").
 		Hudtext("Launch Aborted!",5,2,100,red,false).
-		LogInitialise(targetapoapsis,targetperiapsis,targetinclination,true).
-		log_abort(LIST(missionElapsedTime,abortReason,vehicleConfig,StageDV(),twr(),throttle,pitch_for(),(ship:q*constant:AtmToKPa),ship:altitude,ship:apoapsis,eta:apoapsis,ship:periapsis,currentstagenum,staginginprogress,runmode,numparts,circulariseDV_Periapsis(),circulariseDV_Apoapsis(),(BurnApoapsis_TargetPeriapsis(targetapoapsis)+ABS(circulariseDV_TargetPeriapsis(targetapoapsis,targetperiapsis)))),logPath).		
 		set launchcomplete to true.
 		if Ship:partsingroup("abort"):length > 0 {
 			runpath("0:/Abort.ks").

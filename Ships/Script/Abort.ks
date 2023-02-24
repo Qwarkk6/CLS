@@ -1,13 +1,42 @@
 //Monitors engines for flameout
 Function EngineFlameout {
-	For e in engList {
-		If e:ignition and not e:flameout {
+	list engines in engList.
+	local abortFlamoutCounter is 0.
+	
+	if engList:length > 0 {
+		For e in engList {
+			If e:flameout {
+				set abortFlamoutCounter to abortFlamoutCounter + 1.
+			}
+		}
+		if abortFlamoutCounter > 0 {
+			return true.
+		} else {
 			return false.
 		}
-		If e:ignition and e:flameout {
-			return true.
+	} else {
+		return true.
+	}
+}
+
+//Detect whether seperation engine in LES.
+Function lesDetect {
+	local check is false.
+	list engines in engList.
+	For e in engList {
+		if e:ignition and not e:flameout {
+			if e:throttlelock = true {
+				lesListTemp:add(e).
+			}
 		}
 	}
+	For p in lesListTemp {
+		if p:resources:join(","):contains("SolidFuel") {
+			lesList:add(p).
+			set check to true.
+		}
+	}
+	return check.
 }
 
 //Checks for thrust indicating succesful abort motor ignition
@@ -37,6 +66,17 @@ function abortReourceTracker {
 	}		
 } 
 
+//Enables all vessel resources
+function enableResources {
+	for p in ship:parts {
+		for r in p:resources {
+			if r:enabled = false {
+				set r:enabled to true.
+			}
+		}
+	}
+}
+
 //kOS terminal readouts
 function abortHUD {
 	Print "Abort Procedure          " at (0,0).
@@ -47,15 +87,19 @@ function abortHUD {
 
 //Initialise
 clearscreen.
-RCS on. SAS off.
-list engines in engList.
+RCS on. SAS off. enableResources().
+set engList to list(). set lesListTemp to list(). set lesList to list().
 abort on. lock throttle to 1.
 runpath("0:/CLS_lib/lib_num_to_formatted_str.ks").
 runpath("0:/CLS_lib/lib_navball.ks").
 runpath("0:/CLS_lib/CLS_nav.ks").
 
 //HUD setup
-set shipStatus to "Abort Burn".
+if lesDetect() {
+	set shipStatus to "LES Active".
+} else {
+	set shipStatus to "Abort Burn".
+}
 
 //Steering setup
 //System of slowing pitching and yawing away from original steering atitude to ensure aborted capsule is clear of previous stages
@@ -71,9 +115,15 @@ wait until thrustCheck().
 until EngineFlameout() and ship:verticalspeed < 0 or EngineFlameout() and pitch_for_vector(ship:srfprograde:forevector) < 10 {
 	abortReourceTracker(). abortHUD().
 	
-	if EngineFlameout() and shipStatus = "Abort Burn" {
-		set shipStatus to "Coasting".
-		lock steering to ship:srfprograde.
+	if EngineFlameout() {
+		if shipStatus = "Abort Burn" or shipStatus = "LES Active" {
+			set shipStatus to "Coasting".
+			lock steering to ship:srfprograde.
+		}
+		if lesList:length > 0 and Ship:partsingroup("AG10"):length > 0 {
+			toggle Ag10. 
+		}
 	}
 }
+
 runpath("0:/ChuteDescent.ks").
