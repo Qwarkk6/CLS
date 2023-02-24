@@ -13,7 +13,7 @@ kOS v1.4 made some script breaking changes, and this update fixes the following:
  - Specifying a launch time now works as expected.
  
 Please note, I have given this update very limited play testing. I hope I have caught all the variables requiring a rename.
-<br>
+<br><br>
 
 <b>v1.5.0 (27/01/22)</b>
 
