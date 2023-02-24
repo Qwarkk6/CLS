@@ -4,9 +4,9 @@
 
 // Creates new log file for flight data
 Function logInitialise {
-	parameter apoapsis.
-	parameter periapsis.
-	parameter inclination.
+	parameter vessApoapsis.
+	parameter vessPeriapsis.
+	parameter vessInclination.
 	parameter abort.
 	local year is (time:year):tostring().
 	local day is (time:day):tostring().
@@ -26,12 +26,12 @@ Function logInitialise {
 	}
 	global logpath is path("0:/CLS_lib/logs/" + logname + ".csv").
 	global missionTimeLog is 0.
-	Log ("Apoapsis,"+(apoapsis/1000)+"km"+" Periapsis,"+(periapsis/1000)+"km"+" ,Inc,"+round(inclination,2)) to logPath.
+	Log ("Apoapsis,"+(vessApoapsis/1000)+"km"+" Periapsis,"+(vessPeriapsis/1000)+"km"+" ,Inc,"+round(vessInclination,2)) to logPath.
 	Log (" ") to logPath.
 	if abort = false {
-		Log ("MET,vehicleConfig,dV,TWR,Throttle,Pitch,Q,Alt,Apoapsis,Eta:apo,Periapsis,Stage,Staging,Runmode,Parts,Peri Circ,Apo Circ,3burn Circ,Est Rem dV") to logPath.
+		Log ("MET,vehicleConfig,dV,TWR,Throttle,Pitch,Q,Alt,vessApoapsis,Eta:apo,vessPeriapsis,Stage,Staging,Runmode,Parts,Peri Circ,Apo Circ,3burn Circ,Est Rem dV") to logPath.
 	} else {
-		Log ("MET,AbortReason,vehicleConfig,dV,TWR,Throttle,Pitch,Q,Alt,Apoapsis,Eta:apo,Periapsis,Stage,Staging,Runmode,Parts,Peri Circ,Apo Circ,3burn Circ,Est Rem dV") to logPath.
+		Log ("MET,vehicleConfig,dV,TWR,Throttle,Pitch,Q,Alt,vessApoapsis,Eta:apo,vessPeriapsis,Stage,Staging,Runmode,Parts,Peri Circ,Apo Circ,3burn Circ,Est Rem dV") to logPath.
 	}
 }
 

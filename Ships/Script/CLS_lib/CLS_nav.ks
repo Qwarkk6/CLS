@@ -51,7 +51,8 @@ function PitchProgram_Sqrt {
 	parameter baseApogee is 0.
 	
 	local turnend is body:atm:height*1.15.
-	local currentApogee is (ship:apoapsis-BaseApogee)+480.
+	//local currentApogee is (ship:apoapsis-BaseApogee)+480.
+	local currentApogee is (ship:apoapsis-BaseApogee).
 	local pitch_ang is 90 - max(5,min(90,85*sqrt(currentApogee/turnend))).
 	local maxQsteer is max(0,15-ship:q*15).
 	local pitch_max is pitch_for_vector(Ship:srfprograde:forevector)+maxQsteer.

@@ -8,7 +8,7 @@ Function launchParameters {
 	//Initialise
 	local userInput is false.
 	local confirmed is false.
-	local gui is gui(375).
+	local HUD_gui is gui(375).
 	local output is list().
 	local inputError is false.
 	local warning is false.
@@ -20,12 +20,12 @@ Function launchParameters {
 	global launchLocation is ship:geoposition.							// Records liftoff geo-location for downrange distance calc
 	
 	//Title
-	local Title is gui:addLabel("CLS Parameters").
+	local Title is HUD_gui:addLabel("CLS Parameters").
 	set Title:style:align to "center".
 	set Title:style:fontsize to 20.
 	
 	//Apoapsis
-	local line1 is gui:ADDHLAYOUT().
+	local line1 is HUD_gui:ADDHLAYOUT().
 	local tApoLabel1 is line1:addLabel("Desired Apoapsis").
 	local tApoButton1 is line1:addbutton("Custom").
 	local tApoButton2 is line1:addbutton("Highest").
@@ -38,20 +38,20 @@ Function launchParameters {
 	set tApoButton1:pressed to true.
 	
 	//Hidden Apoapsis Input
-	local lineh1 is gui:ADDHLAYOUT().
+	local lineh1 is HUD_gui:ADDHLAYOUT().
 	local tApoLabel2 is lineh1:addLabel("Apoapsis Input (km)").
 	local tApoInput is lineh1:addtextfield("250").
 	set tApoInput:style:width to 40.
 	lineh1:hide().
 	
 	//Inclination
-	local line2 is gui:ADDHLAYOUT().
+	local line2 is HUD_gui:ADDHLAYOUT().
 	local tIncLabel is line2:addLabel("Desired Inclination (°)").
 	local tIncInput is line2:addtextfield("0").
 	set tIncInput:style:width to 50.
 	
 	//Launch window
-	local line3 is gui:ADDHLAYOUT().
+	local line3 is HUD_gui:ADDHLAYOUT().
 	local tWindowLabel1 is line3:addLabel("Launch Window").
 	local tWindowButton1 is line3:addbutton("Time").
 	local tWindowButton2 is line3:addbutton("tMinus").
@@ -72,7 +72,7 @@ Function launchParameters {
 	set tWindowButton3:style:width to 60.	
 	
 	//Launch Window Input
-	local line4 is gui:ADDHLAYOUT().
+	local line4 is HUD_gui:ADDHLAYOUT().
 	local tWindowLabel2 is line4:addLabel("Time until Launch").
 	local tWindowInput1 is line4:addtextfield("0").
 	local tWindowLabel3 is line4:addLabel("Mins").
@@ -84,7 +84,7 @@ Function launchParameters {
 	set tWindowInput2:style:width to 35.
 	
 	//Launch Window Input
-	local lineh2 is gui:ADDHLAYOUT().
+	local lineh2 is HUD_gui:ADDHLAYOUT().
 	local tWindowLabel3 is lineh2:addLabel("Launch Time").
 	local tWindowInput2a is lineh2:addtextfield("00").
 	local tWindowInputSepa is lineh2:addLabel(":").
@@ -99,14 +99,14 @@ Function launchParameters {
 	lineh2:hide().
 	
 	//Launch Window Input
-	local lineh6 is gui:ADDHLAYOUT().
+	local lineh6 is HUD_gui:ADDHLAYOUT().
 	local tWindowLabel4 is lineh6:addLabel("Longitude of Ascending Node (°)").
 	local tWindowInput3a is lineh6:addtextfield("").
 	set tWindowInput3a:style:width to 50.
 	lineh6:hide().
 	
 	//Max Stages
-	local line5 is gui:ADDHLAYOUT().
+	local line5 is HUD_gui:ADDHLAYOUT().
 	local mStageLabel1 is line5:addLabel("Vehicle Stages").
 	local mStage1Button is line5:addbutton("1").
 	local mStage2Button is line5:addbutton("2").
@@ -126,24 +126,33 @@ Function launchParameters {
 	set mStage2Button:pressed to true.
 	
 	//Hidden Max Stages Input
-	local lineh3 is gui:ADDHLAYOUT().
+	local lineh3 is HUD_gui:ADDHLAYOUT().
 	local mStageLabel2 is lineh3:addLabel("Stages Input").
 	local mStageInput is lineh3:addtextfield("5").
 	set mStageInput:style:width to 40.
 	lineh3:hide().
 	
 	//Data Logging
-	local line6 is gui:ADDHLAYOUT().
+	local line6 is HUD_gui:ADDHLAYOUT().
 	local dLoggingLAbel is line6:addLabel("Data Logging").
 	local dLoggingInput1 is line6:addradiobutton("Yes",false).
 	local dLoggingInput2 is line6:addradiobutton("No",true).
 	
+	//Random Launch Failure chance
+	local line7 is HUD_gui:ADDHLAYOUT().
+	local randomFailureLabel is line7:addLabel("Random Launch Failure").
+	local randomFailureInput1 is line7:addradiobutton("Enabled",false).
+	local randomFailureInput2 is line7:addradiobutton("Disabled",true).
+	if ship:crew():length > 0 {
+		set randomFailureInput1:pressed to true.
+	}
+	
 	//Confirm
-	local confirm is gui:addbutton("Confirm Settings").
+	local confirm is HUD_gui:addbutton("Confirm Settings").
 	set confirm:onclick to { set userInput to true.}.
 	
 	//Error Readout
-	local lineh4 is gui:addvlayout().
+	local lineh4 is HUD_gui:addvlayout().
 	local Error1 is lineh4:addLabel("Error Detected").
 	local Error2 is lineh4:addLabel("-").
 	set Error1:Style:textcolor to red.
@@ -151,7 +160,7 @@ Function launchParameters {
 	lineh4:hide().
 	
 	//Warning Readout
-	local lineh5 is gui:addvlayout().
+	local lineh5 is HUD_gui:addvlayout().
 	local warn1 is lineh5:addLabel("Warning").
 	local warn2 is lineh5:addLabel("-").
 	local warn3 is lineh5:addLabel("Change the parameters or press 'Confirm Settings' to proceed").
@@ -160,7 +169,7 @@ Function launchParameters {
 	set warn3:Style:textcolor to yellow.
 	lineh5:hide().
 	
-	gui:show().
+	HUD_gui:show().
 	
 	//Loop
 	until confirmed {
@@ -202,7 +211,7 @@ Function launchParameters {
 				lineh6:hide().
 				lineh2:show().
 				if tWindowInput2a:text:length > 0 and tWindowInput2b:text:length > 0 and tWindowInput2c:text:length > 0 {
-					global tWindow is tWindowInput2a:text + ":" + tWindowInput2b:text + ":" + tWindowInput2c:text.
+					global tWindow is timestamp(time:year,time:day,tWindowInput2a:text:tonumber(),tWindowInput2b:text:tonumber(),tWindowInput2c:text:tonumber()):seconds - time:seconds.
 				}
 			} else if tWindowButton2:pressed {
 				line2:show().
@@ -260,6 +269,20 @@ Function launchParameters {
 			} else {
 				global tDataLog is false.
 			}
+
+			//Launch Failure
+			if randomFailureInput1:pressed {
+				if floor(random()*100) <= 5 {
+					global lFailure is true.
+					global lFailureApo is max(2000,floor(random()*ship:body:atm:height)).
+				} else {
+					global lFailure is false.
+					global lFailureApo is 9999999999.
+				}
+			} else {
+				global lFailure is false.
+				global lFailureApo is 9999999999.
+			}
 			wait 0.001.
 		}
 		//Warnings
@@ -315,10 +338,12 @@ Function launchParameters {
 			set inputError to true.
 			set Error2:text to "Incorrect time detected".
 		}
-		if tInc < 0 or tInc > 0 and tWindowButton3:pressed {
-			if tWindowInput3a:text:tonumber() < 0 or tWindowInput3a:text:tonumber() > 360 {
-				set inputError to true.
-				set Error2:text to "Longitude of Ascending Node must be between 0° and 360°".
+		if tWindowButton3:pressed {
+			if tInc < 0 or tInc > 0 {
+				if tWindowInput3a:text:tonumber() < 0 or tWindowInput3a:text:tonumber() > 360 {
+					set inputError to true.
+					set Error2:text to "Longitude of Ascending Node must be between 0° and 360°".
+				}
 			}
 		}
 		if tWindowButton4:pressed {
@@ -348,14 +373,16 @@ Function launchParameters {
 			set confirmed to true.
 			
 			//Final data collection of inoutted values
-			output:add(tApo).       //[0] Target Apoapsis
-			output:add(tPeri).		//[1] Target Periapsis
-			output:add(tInc).  	 	//[2] Target Inclination
-			output:add(tWindow).    //[3] Launch Window
-			output:add(tMStages).   //[4] Max Stages
-			output:add(tDataLog).   //[5] Data Logging
+			output:add(tApo).       	//[0] Target Apoapsis
+			output:add(tPeri).			//[1] Target Periapsis
+			output:add(tInc).  	 		//[2] Target Inclination
+			output:add(tWindow).    	//[3] Launch Window
+			output:add(tMStages).   	//[4] Max Stages
+			output:add(tDataLog).   	//[5] Data Logging
+			output:add(lFailure).		//[6] Random launch failure
+			output:add(lFailureApo). 	//[7] Launch failure apoapsis
 			
-			gui:hide().
+			HUD_gui:hide().
 			return output.
 		}
 		wait 0.001.

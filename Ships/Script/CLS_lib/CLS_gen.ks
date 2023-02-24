@@ -76,13 +76,13 @@ Function secondsToLaunch {
 
 //Figures out real world time (GMT).
 Function realWorldTime {
-	local time is kuniverse:realtime.
-	local years is floor(time/31536000).
-	set time to time-(years*31536000).
-	local days is floor(time/86400).
-	set time to time-(days*86400).
-	local hours is floor(time/3600).
-	set time to time-(hours*3600).
-	local minutes is floor(time/60).
+	local rwtime is kuniverse:realtime.
+	local years is floor(rwtime/31536000).
+	set rwtime to rwtime-(years*31536000).
+	local days is floor(rwtime/86400).
+	set rwtime to rwtime-(days*86400).
+	local hours is floor(rwtime/3600).
+	set rwtime to rwtime-(hours*3600).
+	local minutes is floor(rwtime/60).
 	return hours+1 + "." + minutes.
 }

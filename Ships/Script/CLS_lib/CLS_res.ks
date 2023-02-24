@@ -23,15 +23,15 @@ Function resourceCheck {
 Function FuelRemaining {
 	Parameter plist.
 	Parameter resourceName.
-	local r is 0.
+	local rCap is 0.
 	For tank in plist {
 		For res in tank:resources {
 			if res:name = resourceName and res:enabled = true {
-				set r to (r + res:amount).
+				set rCap to (rCap + res:amount).
 			}
 		}
 	}
-	return r.
+	return rCap.
 }
 
 // Identifies the fuel tanks(s) providing fuel for the stage. First creates a list of all fuel tanks and the stage they are assocated with. Then compares the associated stages to find the tanks(s) associated with the largest/current stage.

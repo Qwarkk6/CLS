@@ -35,10 +35,10 @@ function pitch_for {
 
 //Finds current roll
 function roll_for {
-	local r is ship:facing:roll.
-	if r > 360 {
-		return r-360.
+	local cRoll is ship:facing:roll.
+	if cRoll > 360 {
+		return cRoll-360.
 	} else {
-		return r.
+		return cRoll.
 	}
 }

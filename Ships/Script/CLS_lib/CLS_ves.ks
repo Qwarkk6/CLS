@@ -225,11 +225,11 @@ Function detectUllage {
 // calculates total mass of a partlist
 Function PartlistMass {
 	Parameter plist.
-	local mass is 0.
+	local pMass is 0.
 	For p in plist {
-		set mass to mass + p:mass.
+		set pMass to pMass + p:Mass.
 	}
-	return mass.
+	return pMass.
 }
 
 // calculates total available thrust of a partlist

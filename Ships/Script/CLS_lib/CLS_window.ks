@@ -28,7 +28,7 @@ function launchWindowContract {
 
 function launchWindowRendezvous {
     parameter tgt.
-    local lat IS ship:latitude.
+    local lat is ship:latitude.
     local eclipticNormal is vcrs(tgt:obt:velocity:orbit,tgt:body:position-tgt:position):normalized.
     local planetnormal is heading(0,lat):vector.
     local bodyinc is vang(planetnormal, eclipticnormal).

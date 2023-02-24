@@ -131,8 +131,8 @@ Function BurnPeriapsis_TargetApoapsis {
 
 // calculates burn time for the next manuever node. ActiveEngines() needs to be run prior
 Function nodeBurnTime {
-	Parameter node is nextnode.
-	local dV is node:deltav:mag.
+	Parameter n_node is nextnode.
+	local dV is n_node:deltav:mag.
 	local f is ship:availablethrust.
 	local m is ship:mass.
 	local e is constant:e.

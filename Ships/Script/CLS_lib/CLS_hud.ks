@@ -8,30 +8,30 @@
 // Credit to /u/only_to_downvote / mileshatem for the original (and much more straightforward) scrollprint function that this is an adaptation of
 Function scrollprint {
 	Parameter nextprint.
-	Parameter timeStamp is true.
+	Parameter tStamp is true.
 	local maxlinestoprint is 33.	// Max number of lines in scrolling print list
 	
-	if timeStamp = true {
+	if tStamp = true {
 		if runmode = 0 {
 			local t_minus is "T" + hud_missionTime(cdown) + " - ".
-			printlist:add(t_minus + nextprint).
+			printqueue:add(t_minus + nextprint).
 		} else {
 			local t_plus is "T" + hud_missionTime(missionElapsedTime) + " - ".
-			printlist:add(t_plus + nextprint).
+			printqueue:add(t_plus + nextprint).
 		}
 	} else {
-		printlist:add(nextprint).
+		printqueue:add(nextprint).
 	}
 
-	if printlist:length < maxlinestoprint {
-		For printline in printlist {
-			print printlist[printlist:length-1] at (0,(printlist:length-1)+listlinestart).
+	if printqueue:length < maxlinestoprint {
+		For printline in printqueue {
+			print printqueue[printqueue:length-1] at (0,(printqueue:length-1)+listlinestart).
 		}
 	} else {
-		printlist:remove(0).
+		printqueue:remove(0).
 		local currentline is listlinestart.
 		until currentLine = 38 {
-			For printline in printlist {
+			For printline in printqueue {
 				Print "                                                 " at (0,currentLine).
 				Print printline at (0,currentline).
 				Set currentline to currentline+1.
@@ -42,13 +42,13 @@ Function scrollprint {
 
 // presents time of day in hh:mm:ss format
 Function t_o_d {
-	parameter time.
+	parameter currtime.
 	
 	local hoursPerDay is round(body:rotationperiod/3600).
-	local dd is floor(time/(hoursPerDay*3600)).  
-	local hh is floor((time-hoursPerDay*3600*dd)/3600).  
-	local mm is floor((time-3600*hh-hoursPerDay*3600*dd)/60).  
-	local ss is round(time) - mm*60 -   hh*3600 - hoursPerDay*3600*dd. 
+	local dd is floor(currtime/(hoursPerDay*3600)).  
+	local hh is floor((currtime-hoursPerDay*3600*dd)/3600).  
+	local mm is floor((currtime-3600*hh-hoursPerDay*3600*dd)/60).  
+	local ss is round(currtime) - mm*60 -   hh*3600 - hoursPerDay*3600*dd. 
 
 	if ss = 60 {
 		set ss to 0.
@@ -98,14 +98,14 @@ function hud_missionTime {
 
 // Converts stage number to engine readout text.
 Function engineReadout {
-	parameter stage.
+	parameter stageNum.
 	local stageNumber is list(0,1,2,3).
 	local string is list("-","Main Engine","Second Engine","Third Engine").
 	
-	if stage > 3 {
+	if stageNum > 3 {
 		Return "Engine".
 	} else {
-		return string[stageNumber:find(stage)].
+		return string[stageNumber:find(stageNum)].
 	}
 }
 
@@ -231,12 +231,12 @@ Function AscentHUD {
 		set hud_head to "Head:  " + padding(Round(heading_for_vector(ship:facing:forevector),1),2,1,false) + "°".
 	}
 
-	local hud_printlist is list(hud_met,hud_staging,hud_apo,hud_apo_eta,hud_peri,hud_peri_eta,hud_ecc,hud_inc,hud_dV,hud_dV_req,hud_pitch,hud_head,hud_fuel,hud_twr).
+	local hud_printqueue is list(hud_met,hud_staging,hud_apo,hud_apo_eta,hud_peri,hud_peri_eta,hud_ecc,hud_inc,hud_dV,hud_dV_req,hud_pitch,hud_head,hud_fuel,hud_twr).
 	local hud_printlocX is list(00,23,01,01,01,01,19,19,19,19,35,35,35,35).
 	local hud_printlocY is list(04,40,41,42,43,44,41,42,43,44,41,42,43,44).
 	local printLine is 0.
-	until printLine = hud_printlist:length {
-        print hud_printlist[printLine] at (hud_printlocx[printLine],hud_printlocy[printLine]).
+	until printLine = hud_printqueue:length {
+        print hud_printqueue[printLine] at (hud_printlocx[printLine],hud_printlocy[printLine]).
 		set printLine to printLine+1.
 	}
 }
@@ -247,7 +247,7 @@ Function scrubGUI {
 	
 	local userInput is false.
 	local proceedMode is 0.
-	local gui is gui(290).
+	local HUD_gui is gui(290).
 	local scrubInfo is "Unknown Scrub Reason".
 	local scrubInfoCont is "".
 	
@@ -267,19 +267,19 @@ Function scrubGUI {
 	}.
 	
 	//Label 0
-	local label0 is gui:addLabel("<size=18>Unplanned Hold</size>").
+	local label0 is HUD_gui:addLabel("<size=18>Unplanned Hold</size>").
 	set label0:style:align to "center".
 	set label0:style:hstretch to true. // fill horizontally
 	
 	//Label 1
-	local label1 is gui:addLabel(cdownHoldReason).
+	local label1 is HUD_gui:addLabel(cdownHoldReason).
 	set label1:style:fontsize to 16.
 	set label1:style:align to "center".
 	set label1:style:hstretch to true. // fill horizontally
 	
 	//Buttons
-	local buttonline1 is gui:addhlayout().
-	local buttonline2 is gui:addhlayout().
+	local buttonline1 is HUD_gui:addhlayout().
+	local buttonline2 is HUD_gui:addhlayout().
 	local continue is buttonline1:addbutton("Continue Countdown").
 	set continue:style:width to 145.
 	local recycle is buttonline1:addbutton("Recycle Countdown").
@@ -290,13 +290,13 @@ Function scrubGUI {
 	set explain:style:width to 145.
 	
 	//Label2
-	local label2 is gui:addLabel(scrubInfo).
+	local label2 is HUD_gui:addLabel(scrubInfo).
 	set label2:style:align to "center".
 	set label2:style:hstretch to true.	
 	label2:hide().
 	
 	//Label3
-	local label3 is gui:addLabel(scrubInfoCont).
+	local label3 is HUD_gui:addLabel(scrubInfoCont).
 	//set label3:style:align to "center".
 	set label3:style:hstretch to true.	
 	label3:hide().
@@ -317,8 +317,8 @@ Function scrubGUI {
 		label2:show().
 		if label3:text:length > 0 { label3:show(). }
 	}.
-	gui:show().
+	HUD_gui:show().
 	wait until userInput.
-	gui:hide().
+	HUD_gui:hide().
 	return proceedMode.
 }.
