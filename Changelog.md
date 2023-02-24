@@ -12,7 +12,11 @@ kOS v1.4 made some script breaking changes, and this update fixes the following:
  - 'Clobbered builtins' issue raised by u/MaxHeadroom68 - around 15 variables have been renamed
  - Specifying a launch time now works as expected.
  
-Please note, I have given this update very limited play testing. I hope I have caught all the variables requiring a rename.
+ New Features:
+ 
+ - Random launch failure can be enabled in the pre-launch configuration window. It is disabled by default for non-crewed launches and enabled by default for crewed launches. This creates a 5% chance of the launch aborting during launch. Once the vessel has left the atmosphere, this is deactivated. 
+ 
+Please note, I have given this kOS version very limited play testing. I hope I have caught all the variables requiring a rename.
 <br><br>
 
 <b>v1.5.0 (27/01/22)</b>
