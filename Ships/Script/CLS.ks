@@ -35,10 +35,12 @@
 //   - Due to a kOS bug(?) it is essential that parts placed in the action group 10 / abort are not in other action groups. If it is essential for them to appear in other action groups, ensure that they are placed into ag10 / abort FIRST.
 
 // Notes:
-//	 - This script has no dependant mods, however the script checks for parts from the Procedural Fairing & Hullcam mods and will activate FTS from the TAC Self destruct mod
+//	 - This script has no dependant mods, however the script has functions compatible with Hullcam VDS Continues and TAC Self destruct continued
 //	 - Can detect SRBs with thrust curves and will throttle up main engine(s) to cover thrust losses due to throttle curve
 //	 - If the script progresses far enough to activate any stages, but then the script is terminated (either manually or due to anomaly detection) you will need to revert to launchpad before using the script again in order to reset the stages.
-//	 - The script will throttle engines to achieve a liftoff TWR of 1.4 (this number can be configured in TWR configuration).
+//	 - The script will throttle engines to achieve a liftoff TWR of 1.4 (1.8 with SRBs).
+//   - The script will auto switch to Hullcam VDS cameras at various points. Cameras for launch need to be tagged "CameraLaunch". Cameras for Stage sep need to be tagged "CameraSep". Cameras for onboard views need tagged "Camera1" or "camera2" with the number associated with their stage.
+//   - The script will activate parts from TAC Self destruct continued as a FTS if an abort is detected
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////USER CONFIGURATION//////////////////////////
