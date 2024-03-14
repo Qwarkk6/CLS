@@ -1,6 +1,92 @@
 Changelog
 ==========================
 
+<b>v2.0 (14/03/24)</b>
+
+Key Points
+- Remove callouts for downrange & altitude due to high hardware strain
+- New staging pitch control to avoid sudden pitch inputs before, during and after staging
+- Pre-flight input box now allows you to specify the chance of a random failure on ascent if enabled, and define longitude of Ascending Node for precise launches
+- Ships with SRBs will now lift off at a TWR of 1.8 (previously used 1.4, but this required unrealistic & aggressive throttling of Main engines)
+- Script now ignores children parts of attached SRBs during staging checks, which was throwing a warning if SRBs had parts attached (Thanks u/StreitLeak)
+- Initial countdown now happens on a single HUD line to conserve space and limit use of scrollprint due to its hardware strain
+- New compatibility with the TAC Self Destruct Continued Mod - add a whole ship destruction part to the ship and the Flight Termination System will deploy if a mid-flight abort occurs
+- New compatibility with the Hullcam VDS Continued mod to add a cinematic element to your launches!
+- The script will auto switch to Hullcam VDS cameras at various points. Cameras for launch need to be tagged "CameraLaunch". Cameras for Stage sep need to be tagged "CameraSep". Cameras for onboard views need tagged "Camera1" or "camera2" with the number associated with their stage.
+
+Main CLS Script
+- Complete rewrite to make code cleaner and more efficient
+- Move away from looping system to functions for each phase of flight
+- New system of scrubbing a launch on the pad which intentionally causes a kOS error rather than finishing the script. This is an unfortunate side effect of moving away from the loop system but is necessary for the significant gains in script efficiency. 
+- Tweak of time delays around staging for reliability
+- Warp limit now handled in main script rather than external function
+- depreciation of multiple variables no longer required
+- huge reduction of script activity during coast phase 
+
+Abort Script
+- Makes use of centralised engList to avoid unnecessary calls to list active engines
+- Simplifies detection of LES using solid fuels
+- Switches to new resource tracking method from a general library
+- Switches to new fuel cell control method from a general library
+- New HUD readouts
+- Moves away from hardware-heavy string formatting printout method
+
+Chute Descent Script
+- Switches to new resource tracking method from a general library
+- Switches to new fuel cell control method from a general library
+- Moves away from hardware-heavy string formatting printout method
+- New variable naming system
+- More reliable system of cutting drogue parachutes if multiple are deployed
+- Rewrite of functions in Chute Descent Library
+
+CLS_lib/CLS_dv
+- Clean up of all circularation burn calculations
+- stageDV function now provides Burn Remaining & dVRemaining variables called throughout rest of code, rather than stand alone functions for both
+- nodeBurnData replaces burnTime & burnStart functions, storing all info in a list
+
+CLS_lib/CLS_gen
+- Time warp is now controlled within the main script
+- added Camera control function which will add a cinematic element to your launches!
+
+CLS_lib/CLS_hud
+- Now functions to handle printouts for countdown
+- Remove callouts for downrange & altitude due to high hardware strain
+- rewrite of HUD code to significantly reduce hardware strain
+
+CLS_lib/CLS_log
+- Now logs during countdown
+- Now logs time
+
+CLS_lib/CLS_nav
+- pitch program has been tweaked for reliability
+- inclination control has been tweaked for reliability
+- New staging pitch control to avoid sudden pitch inputs before, during and after staging
+
+CLS_lib/CLS_parameters
+- Change of "Contract" to "LAN" allowing to control launch to meet defined longitude of Ascending Node
+- Now allows you to specify the chance of a random failure on ascent if enabled
+
+CLS_lib/CLS_res
+- Move away from fuel mass calculations
+
+CLS_lib/CLS_twr
+- cleaner calculations across multiple functions
+- Ships with SRBs will now lift off at a TWR of 1.8 (previously used 1.4, but this required unrealistic & aggressive throttling of Main engines)
+
+CLS_lib/CLS_ves
+- cleaner code for pre-flight checks
+- Script now ignores children parts of attached SRBs during staging checks, which was throwing a warning if SRBs had parts attached (Thanks u/StreitLeak)
+- Simplified launch clamp check
+- Move of fuel cell control to general library
+- Low power mode now toggles rather than individual functions to turn on & off
+- New system to detect if attached SRBs will sage at different times
+
+New GeneralLibrary
+- I have moved to try and use shared libraries where possible, so now functions in this folder are used by the abort, chute descent and main script
+- Resources has multiple default functions to calculate resource capacity & name as well as how much is remaining and determine which resources are being actively used
+- Fuel cells has multiple functions to detect, use and provide hud readouts for fuel cells
+<br><br>
+
 <b>v1.5.1 (24/02/22)</b>
 
 Happy KSP2 release day!
@@ -12,11 +98,7 @@ kOS v1.4 made some script breaking changes, and this update fixes the following:
  - 'Clobbered builtins' issue raised by u/MaxHeadroom68 - around 15 variables have been renamed
  - Specifying a launch time now works as expected.
  
- New Features:
- 
- - Random launch failure can be enabled in the pre-launch configuration window. It is disabled by default for non-crewed launches and enabled by default for crewed launches. This creates a 5% chance of the launch aborting during launch. Once the vessel has left the atmosphere, this is deactivated. 
- 
-Please note, I have given this kOS version very limited play testing. I hope I have caught all the variables requiring a rename.
+Please note, I have given this update very limited play testing. I hope I have caught all the variables requiring a rename.
 <br><br>
 
 <b>v1.5.0 (27/01/22)</b>
