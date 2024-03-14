@@ -30,7 +30,7 @@ function heading_for {
 
 //Finds current pitch
 function pitch_for {
-  return 90 - vang(ship:up:vector, ship:facing:forevector).
+ return 90 - vang(ship:up:vector, ship:facing:forevector).
 }
 
 //Finds current roll
