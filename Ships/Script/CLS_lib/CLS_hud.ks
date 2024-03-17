@@ -196,7 +196,7 @@ Function AscentHUD {
 	local hud_head is "Head:  " + Round(launchazimuth,1) + "°   ".
 	local hud_fuel is "Fuel:  " + min(999,Round(BurnRemaining)) + "s  ".
 	local hud_twr is "TWR:   " + Round(max(vesTWR,0),2) + "   ".
-	local hud_throttle is "Throt: " + Round(max(throttle,0)*100,1) + "%  ".
+	local hud_throttle is "Throt: " + Round(max(min(throttle,1),0)*100,1) + "%  ".
 	
 	if eta:apoapsis > 300 {
 		set hud_apo_eta to "eta: " + floor(eta:apoapsis/60) + "m    ".
