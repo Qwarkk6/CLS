@@ -834,6 +834,7 @@ Function abortProcedure {
 			e:shutdown.
 		}
 	}
+	CameraControl(currentstagenum, false, true).
 	set Ship:control:neutralize to true. 
 	if Ship:partsingroup("abort"):length > 0 {
 		runpath("0:/Abort.ks").
@@ -906,7 +907,6 @@ Function runmodePAStaging {
 //Coast phase
 Function runmodeCoast {
 	set warpLimit to 3. if warp > warpLimit { set warp to warpLimit. }.
-	stageDV().
 	scrollprint("FTS has safed").
 	lock steering to Ship:prograde:vector.
 	when vang(steering,ship:facing:vector) < 1 then { RCS off. }
@@ -915,6 +915,7 @@ Function runmodeCoast {
 	set burnDuration to burnParameters[0].
 	set burnStartTime to time:seconds + cnode:eta - burnParameters[1].
 	set burnDeltaV to cnode:deltav.
+	wait 1. stageDV().
 	until time:seconds >= burnStartTime-90 {
 		AscentHUD(). wait 0.01.
 	}
@@ -991,5 +992,6 @@ if threeBurn = true {
 	wait until vang(steering,ship:facing:vector) < 1.
 	unlock all. sas on. rcs off. 
 	if hasnode { remove cnode. }
+	wait 1. StageDV().
 	Print "                                              " at (0,0).
 }
