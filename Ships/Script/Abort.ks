@@ -101,7 +101,6 @@ set yaw to ship:facing:yaw.
 set roll to ship:facing:roll.
 set pitch to ship:facing:pitch.
 set entrytime to time:seconds.
-set chuteDetect to false.
 lock turnRate to (time:seconds - entrytime)*3.
 lock steering to R(pitch+turnRate,yaw+turnRate,roll).
 
@@ -118,14 +117,4 @@ until EngineFlameout() and ship:verticalspeed < 0 {
 	wait 0.01.
 }
 
-for p in ship:parts {
-	if p:hasmodule("ModuleParachute") {
-		set chuteDetect to true.
-	}
-}
-
-if chuteDetect {
-	runpath("0:/ChuteDescent.ks").
-} else {
-	Print "No Chutes Detected - Terminating script" at (0,7).
-}
+runpath("0:/ChuteDescent.ks").

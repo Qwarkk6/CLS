@@ -196,7 +196,7 @@ Function AscentHUD {
 	local hud_head is "Head:  " + Round(launchazimuth,1) + "°   ".
 	local hud_fuel is "Fuel:  " + min(999,Round(BurnRemaining)) + "s  ".
 	local hud_twr is "TWR:   " + Round(max(vesTWR,0),2) + "   ".
-	local hud_throttle is "Throt: " + Round(max(min(throttle,1),0)*100,1) + "%   ".
+	local hud_throttle is "Throt: " + Round(max(min(throttle,1),0)*100,1) + "%  ".
 	
 	if eta:apoapsis > 300 {
 		set hud_apo_eta to "eta: " + floor(eta:apoapsis/60) + "m    ".
@@ -259,7 +259,7 @@ Function scrubGUI {
 	} else if  cdownHoldReason = "AG10 Advisory" {
 		set scrubInfo to "There is nothing in action group 10. AG10 is reserved for fairing jettison".
 	} else if cdownHoldReason = "Crew Abort Procedure Error" {
-		set scrubInfo to "CLS has detected crew onboard, but nothing in the abort action group".
+		set scrubInfo to "CLS has detected crew onboard, but nothing in the abort action group or no chutes attached to the crew pod".
 	} else if cdownHoldReason = "Insufficient Power" {
 		set scrubInfo to "Vehicle electric charge is below 40%".
 	} else if cdownHoldReason = "No launch clamps detected" {

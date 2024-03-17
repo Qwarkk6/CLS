@@ -284,7 +284,7 @@ Function launchParameters {
 				}
 				if floor(random()*100) <= failureChance {
 					global lFailure is true.
-					global lFailureApo is max(2000,floor(random()*ship:body:atm:height)).
+					global lFailureApo is max(2000,floor(random()*0.75*ship:body:atm:height)).
 				} else {
 					global lFailure is false.
 					global lFailureApo is 9999999999.

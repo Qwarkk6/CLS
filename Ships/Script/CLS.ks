@@ -41,7 +41,7 @@
 //	 - If the script progresses far enough to activate any stages, but then the script is terminated (either manually or due to anomaly detection) you will need to revert to launchpad before using the script again in order to reset the stages.
 //	 - The script will throttle engines to achieve a liftoff TWR of 1.4 (1.8 with SRBs).
 //   - The script will auto switch to Hullcam VDS cameras at various points. Cameras for launch need to be tagged "CameraLaunch". Cameras for Stage sep need to be tagged "CameraSep". Cameras for onboard views need tagged "Camera1" or "camera2" with the number associated with their stage.
-//   - The script will activate parts from TAC Self destruct continued as a FTS if an abort is detected
+//   - The script will activate parts from TAC Self destruct continued as a FTS if an abort is detected - do not put these parts inside the abort AG
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////USER CONFIGURATION//////////////////////////
@@ -375,6 +375,7 @@ until runmode > 0 {
 		if proceedMode = 1 {													// continue countdown
 			set runmode to 0.
 			set launchtime to time:seconds + tminus.
+			if cdownHoldReason = "Crew Abort Procedure Error" and Ship:partsingroup("abort"):length < 1 or chuteDetect() = false { set launchFailure to false. }		// deactives random launch failure if countdown is continued with abort procedure issues not corrected
 			Print "Target Launch Time: NET " + T_O_D(launchtime) at (0,1).
 			Print "                                     " at (0,listlinestart).
 			Print "                                     " at (0,listlinestart+1).
@@ -467,7 +468,7 @@ on abort {
 if launchFailure {
 	when ship:apoapsis >= launchFailureApo or ship:apoapsis > atmAlt then {
 		if ship:apoapsis > atmAlt { return false. }
-		set abortReason to "FTS Activated".
+		set abortReason to "Random Launch Failure".
 		abortProcedure().
 	}
 }
@@ -841,11 +842,16 @@ Function abortProcedure {
 	clearscreen. set config:audioerr to false. AscentHUD().	
 	if Ship:partsingroup("abort"):length > 0 {
 		runpath("0:/Abort.ks").
+		shutdown.
 	}
 	if FTSlist:length > 0 and runmode < 3 {
 		FTSlist[0]:getmodule("TacSelfDestruct"):doaction("Self Destruct!",true).
 	}
-	print 1/0. //Intentional error to abort launch
+	clearscreen.
+	Print "CLS has aborted launch at T" + hud_missionTime(missionElapsedTime) at (0,4).
+	Print "Cause: " + abortReason + " at " + round(ship:altitude,0) + "m" at (0,5).
+	Print "kOS terminal powering down" at (0,6).
+	shutdown.
 }
 	
 //////////////////////////////////////////////////////////////////////

@@ -49,6 +49,7 @@ Function realWorldTime {
 Function CameraControl {
 	Parameter StageNumber is currentstagenum.
 	Parameter Launch is false.
+	Parameter Abort is false.
 	local stageString is "Camera" + StageNumber.
 	
 	if ship:partstaggedpattern("Camera"):length > 0 {
@@ -61,6 +62,11 @@ Function CameraControl {
 	if Launch {
 		if ship:partstagged("CameraLaunch"):length = 1 {
 			ship:partstagged("CameraLaunch")[0]:getmodule("MuMechModuleHullCameraZoom"):doaction("activate camera",true).
+		}
+	} else if Abort {
+		for p in ship:partstaggedpattern("Camera") {
+			p:getmodule("MuMechModuleHullCameraZoom"):doaction("deactivate camera",true).
+			p:getmodule("MuMechModuleHullCameraZoom"):doaction("deactivate camera",true).
 		}
 	} else {
 		if ship:partstagged(stageString):length = 1 {
