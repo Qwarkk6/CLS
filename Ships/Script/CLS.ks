@@ -28,6 +28,7 @@
 //	 - In a 3 booster config (i.e Falcon Heavy or Delta Heavy), all engines on the central booster should be tagged "CentralEngine". This allows them to be individually throttled down during ascent.
 //	 - Uses RCS during stage separation so upper stage(s) should have RCS fuel/thrusters. Not a hard requirement though.
 //	 - Lifoff thrust to weight ratio (TWR) must be above 1.3 (this number can be configured in TWR configuration).
+//   - If launching a vehicle with crew, the script will follow an abort procedure and chute controlled decent if necessary during flight. Ensure your abort action group is correct and the crewed part has parachutes!
 
 // Action groups:
 //   - Place any fairing or LES jettison into action group 10. Will jettison based on atmopshere pressure.
@@ -278,7 +279,7 @@ until runmode > 0 {
 		if crewCount = 0 {
 			CdownPrint(false,false).
 		} else {
-			if Ship:partsingroup("abort"):length < 1 and crewAbortCheck {
+			if Ship:partsingroup("abort"):length < 1 or chuteDetect() = false and crewAbortCheck {
 				set runmode to -1.
 				set cdownHoldReason to "Crew Abort Procedure Error".
 			} else {
