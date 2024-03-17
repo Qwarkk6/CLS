@@ -43,7 +43,9 @@ function chuteDetect {
 		if p:hasmodule("ModuleParachute") {
 			set chutes to true. break.
 		} else for p in p:children {
-			set chutes to true. break.
+			if p:hasmodule("ModuleParachute") {
+				set chutes to true. break.
+			}
 		}
 	}
 	return chutes.
