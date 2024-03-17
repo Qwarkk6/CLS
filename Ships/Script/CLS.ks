@@ -468,7 +468,6 @@ if launchFailure {
 		if ship:apoapsis > atmAlt { return false. }
 		set abortReason to "FTS Activated".
 		abortProcedure().
-		abortProcedure().
 	}
 }
 
@@ -835,16 +834,16 @@ Function abortProcedure {
 		}
 	}
 	CameraControl(currentstagenum, false, true).
-	set Ship:control:neutralize to true. 
+	set Ship:control:neutralize to true.
+	Hudtext("Launch Aborted",5,2,50,red,true).
+	Hudtext(abortReason,5,2,50,red,true).
+	clearscreen. set config:audioerr to false. AscentHUD().	
 	if Ship:partsingroup("abort"):length > 0 {
 		runpath("0:/Abort.ks").
 	}
 	if FTSlist:length > 0 and runmode < 3 {
 		FTSlist[0]:getmodule("TacSelfDestruct"):doaction("Self Destruct!",true).
 	}
-	clearscreen. set config:audioerr to false. AscentHUD().
-	Hudtext("Launch Aborted",5,2,50,red,true).
-	Hudtext(abortReason,5,2,50,red,true).
 	print 1/0. //Intentional error to abort launch
 }
 	
