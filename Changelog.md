@@ -10,18 +10,22 @@ Key Points
 - Ships with SRBs will now lift off at a TWR of 1.8 (previously used 1.4, but this required unrealistic & aggressive throttling of Main engines)
 - Script now ignores children parts of attached SRBs during staging checks, which was throwing a warning if SRBs had parts attached (Thanks u/StreitLeak)
 - Initial countdown now happens on a single HUD line to conserve space and limit use of scrollprint due to its hardware strain
-- New compatibility with the TAC Self Destruct Continued Mod - add a whole ship destruction part to the ship and the Flight Termination System will deploy if a mid-flight abort occurs
+- New compatibility with the TAC Self Destruct Continued Mod - add a whole ship destruction part to the ship and the Flight Termination System will deploy if a mid-flight abort occurs - no need to add them to the abort AG
 - New compatibility with the Hullcam VDS Continued mod to add a cinematic element to your launches!
 - The script will auto switch to Hullcam VDS cameras at various points. Cameras for launch need to be tagged "CameraLaunch". Cameras for Stage sep need to be tagged "CameraSep". Cameras for onboard views need tagged "Camera1" or "camera2" with the number associated with their stage.
+- CLS now checks that a crewed pod has chutes attached in case of an abort scenario and will hold the launch if no chutes are detected.
+- If the user decides to continue with a countdown for a crewed vessel after CLS identifies issues with the abort AG or no chutes are detected, the random launch failure feature is automatically deactived, to avoid the script throwing an error later down the line if an abort occurs.
 
 Main CLS Script
 - Complete rewrite to make code cleaner and more efficient
 - Move away from looping system to functions for each phase of flight
-- New system of scrubbing a launch on the pad which intentionally causes a kOS error rather than finishing the script. This is an unfortunate side effect of moving away from the loop system but is necessary for the significant gains in script efficiency. 
+- New system of scrubbing a launch on the pad which intentionally powers down the kOS terminal rather than finishing the script. This is an unfortunate side effect of moving away from the loop system but is necessary for the significant gains in script efficiency. 
 - Tweak of time delays around staging for reliability
 - Warp limit now handled in main script rather than external function
 - depreciation of multiple variables no longer required
 - huge reduction of script activity during coast phase 
+- CLS now checks that a crewed pod has chutes attached in case of an abort scenario and will hold the launch if no chutes are detected.
+- If the user decides to continue with a countdown for a crewed vessel after CLS identifies issues with the abort AG or no chutes are detected, the random launch failure feature is automatically deactived, to avoid the script throwing an error later down the line if an abort occurs.
 
 Abort Script
 - Makes use of centralised engList to avoid unnecessary calls to list active engines
