@@ -5,6 +5,8 @@
 //Opens a GUI to input chosen launch parameters in a much more user friendly way than parameters.
 Function launchParameters {	
 	
+	global halflaunch is 190.	//20 seconds countdown, 2:50 mins for half of ascent time //when launching into plane, we launch slightly before that orbital plane is overhead to account for launch time
+	
 	//Initialise
 	local userInput is false.
 	local confirmed is false.
@@ -55,7 +57,7 @@ Function launchParameters {
 	local tWindowLabel1 is line3:addLabel("Launch Window").
 	local tWindowButton1 is line3:addbutton("Time").
 	local tWindowButton2 is line3:addbutton("tMinus").
-	local tWindowButton3 is line3:addbutton("Contract").
+	local tWindowButton3 is line3:addbutton("LAN").
 	local tWindowButton4 is line3:addbutton("Target").
 	set tWindowButton2:pressed to true.
 	set tWindowButton1:toggle to true.
@@ -69,7 +71,7 @@ Function launchParameters {
 	set tWindowButton1:style:width to 40.	
 	set tWindowButton2:style:width to 50.	
 	set tWindowButton4:style:width to 50.	
-	set tWindowButton3:style:width to 60.	
+	set tWindowButton3:style:width to 40.	
 	
 	//Launch Window Input
 	local line4 is HUD_gui:ADDHLAYOUT().
@@ -132,20 +134,27 @@ Function launchParameters {
 	set mStageInput:style:width to 40.
 	lineh3:hide().
 	
-	//Data Logging
-	local line6 is HUD_gui:ADDHLAYOUT().
-	local dLoggingLAbel is line6:addLabel("Data Logging").
-	local dLoggingInput1 is line6:addradiobutton("Yes",false).
-	local dLoggingInput2 is line6:addradiobutton("No",true).
-	
-	//Random Launch Failure chance
+	//Random Launch Failure
 	local line7 is HUD_gui:ADDHLAYOUT().
 	local randomFailureLabel is line7:addLabel("Random Launch Failure").
-	local randomFailureInput1 is line7:addradiobutton("Enabled",false).
-	local randomFailureInput2 is line7:addradiobutton("Disabled",true).
-	if ship:crew():length > 0 {
-		set randomFailureInput1:pressed to true.
-	}
+	local randomFailureInput1 is line7:addbutton("Enabled").
+	local randomFailureInput2 is line7:addbutton("Disabled").
+	set randomFailureInput1:pressed to true.
+	set randomFailureInput1:toggle to true.
+	set randomFailureInput1:exclusive to true.
+	set randomFailureInput1:style:width to 60.
+	set randomFailureInput2:toggle to true.
+	set randomFailureInput2:exclusive to true.
+	set randomFailureInput2:style:width to 60.	
+	
+	//Random Launch Failure chance
+	local line8 is HUD_gui:ADDHLAYOUT().
+	local randomFailureChanceLabel is line8:addlabel("Failure Chance").
+	local randomFailureChance1 is line8:addradiobutton("5%",true).
+	local randomFailureChance2 is line8:addradiobutton("10%",false).
+	local randomFailureChance3 is line8:addradiobutton("Custom",false).
+	local randomFailureChance3i is line8:addtextfield("25").
+	line8:hide().
 	
 	//Confirm
 	local confirm is HUD_gui:addbutton("Confirm Settings").
@@ -230,7 +239,7 @@ Function launchParameters {
 				lineh2:hide().
 				line4:hide().
 				if tWindowInput3a:text:length > 0 {
-					global tWindow is launchWindowContract(tInc,tWindowInput3a:text:tonumber())-(time:seconds+30).
+					global tWindow is launchWindowContract(tInc,tWindowInput3a:text:tonumber())-(time:seconds+halflaunch).
 				} else {
 					global tWindow is 23.
 				}
@@ -262,17 +271,18 @@ Function launchParameters {
 			} else if mStage4Button:pressed {
 				global tMStages is 4.
 			} 
-			
-			//Data Logging
-			if dLoggingInput1:pressed {
-				global tDataLog is true.
-			} else {
-				global tDataLog is false.
-			}
 
 			//Launch Failure
 			if randomFailureInput1:pressed {
-				if floor(random()*100) <= 5 {
+				line8:show().
+				if randomFailureChance1:pressed {
+					global failureChance is randomFailureChance1:text:remove(1,1):tonumber().
+				} else if randomFailureChance2:pressed {
+					global failureChance is randomFailureChance2:text:remove(2,1):tonumber().
+				} else if randomFailureChance3:pressed {
+					global failureChance is min(100,randomFailureChance3i:text:tonumber(0)).
+				}
+				if floor(random()*100) <= failureChance {
 					global lFailure is true.
 					global lFailureApo is max(2000,floor(random()*ship:body:atm:height)).
 				} else {
@@ -280,6 +290,7 @@ Function launchParameters {
 					global lFailureApo is 9999999999.
 				}
 			} else {
+				line8:hide().
 				global lFailure is false.
 				global lFailureApo is 9999999999.
 			}
@@ -356,6 +367,13 @@ Function launchParameters {
 			set inputError to true.
 			set Error2:text to "Must have at least 1 stage".
 		}
+		//Launchfailure
+		if randomFailureInput1:pressed and randomFailureChance3:pressed {
+			if randomFailureChance3i:text:contains("%") {
+				set inputError to true.
+				set Error2:text to "Please specify failure chance with numbers only".
+			}
+		}
 		
 		//Loop or Finalise
 		if inputError = true {
@@ -378,9 +396,8 @@ Function launchParameters {
 			output:add(tInc).  	 		//[2] Target Inclination
 			output:add(tWindow).    	//[3] Launch Window
 			output:add(tMStages).   	//[4] Max Stages
-			output:add(tDataLog).   	//[5] Data Logging
-			output:add(lFailure).		//[6] Random launch failure
-			output:add(lFailureApo). 	//[7] Launch failure apoapsis
+			output:add(lFailure).		//[5] Random launch failure
+			output:add(lFailureApo). 	//[6] Launch failure apoapsis
 			
 			HUD_gui:hide().
 			return output.

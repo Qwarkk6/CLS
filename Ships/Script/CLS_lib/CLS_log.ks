@@ -26,12 +26,13 @@ Function logInitialise {
 	}
 	global logpath is path("0:/CLS_lib/logs/" + logname + ".csv").
 	global missionTimeLog is 0.
+	global cdownLog is -20.
 	Log ("Apoapsis,"+(vessApoapsis/1000)+"km"+" Periapsis,"+(vessPeriapsis/1000)+"km"+" ,Inc,"+round(vessInclination,2)) to logPath.
 	Log (" ") to logPath.
 	if abort = false {
-		Log ("MET,vehicleConfig,dV,TWR,Throttle,Pitch,Q,Alt,vessApoapsis,Eta:apo,vessPeriapsis,Stage,Staging,Runmode,Parts,Peri Circ,Apo Circ,3burn Circ,Est Rem dV") to logPath.
+		Log ("MET,vehicleConfig,dV,TWR,Throttle,Pitch,Q,Alt,vessApoapsis,Eta:apo,vessPeriapsis,Stage,Staging,Runmode,Parts,Peri Circ,Apo Circ,3burn Circ,Est Rem dV,Time") to logPath.
 	} else {
-		Log ("MET,vehicleConfig,dV,TWR,Throttle,Pitch,Q,Alt,vessApoapsis,Eta:apo,vessPeriapsis,Stage,Staging,Runmode,Parts,Peri Circ,Apo Circ,3burn Circ,Est Rem dV") to logPath.
+		Log ("MET,vehicleConfig,dV,TWR,Throttle,Pitch,Q,Alt,vessApoapsis,Eta:apo,vessPeriapsis,Stage,Staging,Runmode,Parts,Peri Circ,Apo Circ,3burn Circ,Est Rem dV,Time") to logPath.
 	}
 }
 
@@ -51,6 +52,25 @@ function log_data {
 		logString:remove((logString:length - 1),1).
 		Log logString TO logpath.
 		set missionTimeLog to missionElapsedTime+0.5.
+	}
+}
+
+// Logs data from list to log file specified
+//Specific for countdown
+function log_data_cdown {
+	Parameter cdown,logData,logpath.
+	if cdown > cdownLog {
+		local logString is "".
+		For data in logData {
+			if (data):typename() = "String" or (data):typename() = "Boolean" {
+				set logString to logString + data + ",".			//Rounds all scaler values to 2 sign numbers
+			} else {
+				set logString to logString + round(data,2) + ",".
+			}
+		}
+		logString:remove((logString:length - 1),1).
+		Log logString TO logpath.
+		set cdownLog to cdownLog+0.5.
 	}
 }
 

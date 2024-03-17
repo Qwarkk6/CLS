@@ -1,28 +1,22 @@
 //Monitors engines for flameout
 Function EngineFlameout {
-	list engines in engList.
-	local abortFlamoutCounter is 0.
+	local check is false.
 	
 	if engList:length > 0 {
 		For e in engList {
 			If e:flameout {
-				set abortFlamoutCounter to abortFlamoutCounter + 1.
+				set check to true. break.
 			}
 		}
-		if abortFlamoutCounter > 0 {
-			return true.
-		} else {
-			return false.
-		}
-	} else {
-		return true.
-	}
+	} 
+	return check.
 }
 
 //Detect whether seperation engine in LES.
 Function lesDetect {
 	local check is false.
-	list engines in engList.
+	local lesListTemp is list().
+	local lesList is list().
 	For e in engList {
 		if e:ignition and not e:flameout {
 			if e:throttlelock = true {
@@ -31,7 +25,7 @@ Function lesDetect {
 		}
 	}
 	For p in lesListTemp {
-		if p:resources:join(","):contains("SolidFuel") {
+		if p:wetmass > p:drymass {
 			lesList:add(p).
 			set check to true.
 		}
@@ -41,30 +35,16 @@ Function lesDetect {
 
 //Checks for thrust indicating succesful abort motor ignition
 Function thrustCheck {
-	list engines in engList.
 	local check is false.
 	For e in engList {
 		If e:ignition and not e:flameout {
 			if e:thrust > 0 and e:fuelflow > 0 {
-				set check to true.
+				set check to true. break.
 			}
 		}
 	}
 	return check.
 }
-
-//Resource monitoring
-function abortReourceTracker {	
-	list resources in resList.
-	For res in reslist {
-		If res:Name = "ElectricCharge" {
-			set EC to (Res:Amount/Res:Capacity)*100.
-		}
-		if res:Name = "Aerozine50" {
-			set rcsFuel to (Res:Amount/Res:Capacity)*100.
-		} 
-	}		
-} 
 
 //Enables all vessel resources
 function enableResources {
@@ -79,20 +59,32 @@ function enableResources {
 
 //kOS terminal readouts
 function abortHUD {
-	Print "Abort Procedure          " at (0,0).
+	Print "Abort Procedure Active    " at (0,0).
 	Print "Status: " + shipStatus + "                    " at (0,1).
-	Print "RCS: " + padding(rcsFuel,2,1,false) + "% | EC: " +  padding(EC,2,1,false) + "%   " at (0,2).
-	Print "------------------" at (0,3).
+	Print "------------------" at (0,2).
+	Print "Battery Charge: " + round(EC,1) + "%     " at (0,3).
+	Print "Fuel Remaining: " + round(FuelRem,1) + "%     " at (0,4).
+	Print "Fuel Cells: " + fuelCellStatus + "          " at (0,5).
 }
 
 //Initialise
 clearscreen.
 RCS on. SAS off. enableResources().
-set engList to list(). set lesListTemp to list(). set lesList to list().
 abort on. lock throttle to 1.
-runpath("0:/CLS_lib/lib_num_to_formatted_str.ks").
-runpath("0:/CLS_lib/lib_navball.ks").
-runpath("0:/CLS_lib/CLS_nav.ks").
+runpath("0:/GeneralLibrary/Resources.ks").
+runpath("0:/GeneralLibrary/FuelCells.ks").
+
+//Resources
+list resources in resList.
+list engines in engList.
+set activeResource to Active_Resource().
+set batteryCapacity to Resource_Capacity("electriccharge").
+lock EC to ship:electriccharge / batteryCapacity * 100.
+if activeResource = false {
+	set FuelRem to 0.
+} else {
+	lock FuelRem to Resource_Remaining(activeResource) / Resource_Capacity(activeResource) * 100.
+}
 
 //HUD setup
 if lesDetect() {
@@ -100,6 +92,8 @@ if lesDetect() {
 } else {
 	set shipStatus to "Abort Burn".
 }
+
+wait until thrustCheck().
 
 //Steering setup
 //System of slowing pitching and yawing away from original steering atitude to ensure aborted capsule is clear of previous stages
@@ -110,20 +104,17 @@ set entrytime to time:seconds.
 lock turnRate to (time:seconds - entrytime)*3.
 lock steering to R(pitch+turnRate,yaw+turnRate,roll).
 
-wait until thrustCheck().
-
-until EngineFlameout() and ship:verticalspeed < 0 or EngineFlameout() and pitch_for_vector(ship:srfprograde:forevector) < 10 {
-	abortReourceTracker(). abortHUD().
+until EngineFlameout() and ship:verticalspeed < 0 {
+	abortHUD(). fuelCellControl().
 	
-	if EngineFlameout() {
-		if shipStatus = "Abort Burn" or shipStatus = "LES Active" {
-			set shipStatus to "Coasting".
-			lock steering to ship:srfprograde.
-		}
-		if lesList:length > 0 and Ship:partsingroup("AG10"):length > 0 {
+	if EngineFlameout() { 
+		lock throttle to 0.
+		set shipStatus to "Coasting".
+		if Ship:partsingroup("AG10"):length > 0 {
 			toggle Ag10. 
 		}
 	}
+	wait 0.01.
 }
 
 runpath("0:/ChuteDescent.ks").

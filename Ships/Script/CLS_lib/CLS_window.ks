@@ -13,10 +13,10 @@ function launchWindowContract {
         set launchtime to body:rotationperiod - launchtime.
     }
     local lt is launchtime+time:seconds.
-    if time:seconds < lt-(body:rotationPeriod/2)-23 {		//Descending Node
+    if time:seconds < lt-(body:rotationPeriod/2)-halflaunch {		//Descending Node
 		global launchNode is " (Descending Node)".
 		return lt-(body:rotationPeriod/2).
-    } else if time:seconds < lt-23 {			//Ascending Node
+    } else if time:seconds < lt-halflaunch {			//Ascending Node
 		global tInc is -1*tInc.
 		global launchNode is " (Ascending Node)".
         return lt.
@@ -52,7 +52,7 @@ function launchWindowRendezvous {
 	}
 }
 
-function orbitNormal
+local function orbitNormal
 {
   parameter inc, lan.
   

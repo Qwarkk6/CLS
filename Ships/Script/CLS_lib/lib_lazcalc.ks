@@ -19,6 +19,10 @@ Function LAZcalc_init {
     Parameter desiredAlt.		 	//Altitude of desired target orbit (in *meters*)
     Parameter desiredInc. 			//Inclination of desired target orbit
 	
+	if desiredAlt >= (body:soiradius*0.975)-ship:body:radius {
+		set desiredAlt to 1000000.
+	}
+	
     local autoNodeEpsilon is 10. 		// How many m/s north or south will cause a north/south switch
     local launchLatitude is ship:latitude.
     local data is list().  			// A list is used to store information used by LAZcalc

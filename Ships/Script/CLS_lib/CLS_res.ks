@@ -5,33 +5,23 @@
 @lazyglobal off.
 
 // Checks if a resource is above a specified threshold
-Function resourceCheck {
-	Parameter resourceName.
+Function batteryCheck {
 	Parameter threshold.
-	For res in ship:resources {
-		If res:name = resourceName {
-			If (res:amount/res:capacity) <= threshold {
-				return false.
-			} else {
-				return true.
-			}
-		}
+	if ship:electriccharge/BatteryCapacity <= threshold {
+		return false.
+	} else {
+		return true.
 	}
 }
 
 // Detects the fuel capacity of a given partlist
 Function FuelRemaining {
 	Parameter plist.
-	Parameter resourceName.
-	local rCap is 0.
-	For tank in plist {
-		For res in tank:resources {
-			if res:name = resourceName and res:enabled = true {
-				set rCap to (rCap + res:amount).
-			}
-		}
+	local rMass is 0.
+	for p in plist {
+		set rMass to rMass + (p:mass - p:drymass).
 	}
-	return rCap.
+	return rMass.
 }
 
 // Identifies the fuel tanks(s) providing fuel for the stage. First creates a list of all fuel tanks and the stage they are assocated with. Then compares the associated stages to find the tanks(s) associated with the largest/current stage.
@@ -50,7 +40,7 @@ Function FuelTank {
 	for p in MFT[0] {
 		MFT[1]:add(p:stage).
 	}
-	 Until MFT[1]:length = 1 {
+	Until MFT[1]:length = 1 {
 		if MFT[1][0] <= MFT [1][1] {
 			MFT[1]:remove(0).
 			MFT[0]:remove(0).
@@ -106,63 +96,26 @@ Function FuelTankUpper {
 
 //Detect main fuel 
 Function PrimaryFuel {
+	local PFe is 0.
 	if runmode > 0 {
-		Activeenginelist().
-		global engine is aelist[0].
+		Activeenginelist(). wait 0.01.
+		set PFe to aelist[0].
 	} else {
-		list engines in elist.
-		for p in elist {
+		local tempelist is ship:engines.
+		for p in tempelist {
 			if p:stage = stage:number-1 {
-				global engine is p.
+				set PFe to p. break.
 			}
 		}
 	}
 	
 	//First Resource
-	local res1 is engine:consumedResources:values[0]:tostring.
+	local res1 is PFe:consumedResources:values[0]:tostring.
 	local res1 is res1:substring(17,res1:length-17).
 	global ResourceOne is res1:remove(res1:length-1,1).
 	
 	//Second Resource
-	local res2 is engine:consumedResources:values[1]:tostring.
+	local res2 is PFe:consumedResources:values[1]:tostring.
 	local res2 is res2:substring(17,res2:length-17).
 	global ResourceTwo is res2:remove(res2:length-1,1).
-}
-
-//Determines mass of main fuel
-Function PrimaryFuelMass {
-	global resourceMass is list().
-	global resourceName is list().
-	For res in ship:resources {
-		resourceName:add(res:name).
-		resourceMass:add(res:density).
-	}
-	Global ResourceOneMass is resourceMass[resourceName:find(ResourceOne)].
-	Global ResourceTwoMass is resourceMass[resourceName:find(ResourceTwo)].
-}
-
-//Detects solid fuel type 
-Function SolidFuel {
-	
-	if asrblist:length > 0 or SRBs:length > 0 {
-		if asrblist:length > 0 {
-			global srb is asrblist[0].
-		} else if SRBs:length > 0 {
-			For p in SRBs {
-				if p:stage = stage:number-1 {
-					global srb is p.
-				} else if p:stage = stage:number-2 {
-					global srb is p.
-				}
-			}
-		}
-		local res is srb:consumedResources:values[0]:tostring.
-		local res is res:substring(17,res:length-17).
-		global SolidFuelName is res:remove(res:length-1,1).
-		for res in ship:resources {
-			if res:name = SolidFuelName {
-				global SolidFuelMass is res:density.
-			}
-		}
-	}
 }
